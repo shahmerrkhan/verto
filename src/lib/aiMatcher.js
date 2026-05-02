@@ -1,61 +1,78 @@
-export async function rankOpportunitiesWithAI(opportunities, profile) {
+export function rankOpportunitiesWithAI(opportunities, profile) {
   if (!opportunities || opportunities.length === 0) {
     return opportunities
   }
 
-  const prompt = `You are an opportunity matching expert. Rank these opportunities for a student based on how well they match their profile.
+  // Score each opportunity based on profile match
+  const scored = opportunities.map(opp => {
+    let score = 0
 
-Student Profile:
-- Grade: ${profile.grade}
-- Province: ${profile.province}
-- Interests: ${profile.interests?.join(', ') || 'Not specified'}
-- GPA: ${profile.gpa || 'Not specified'}
-- Financial need: ${profile.financial_need || 'Not specified'}
-
-Opportunities:
-${opportunities.map((opp, i) => `
-${i + 1}. ${opp.title}
-   Organization: ${opp.org_name}
-   Type: ${opp.type}
-   Description: ${opp.description}
-   Interest tags: ${opp.interest_tags?.join(', ') || 'None'}
-`).join('\n')}
-
-Return ONLY a JSON array of opportunity IDs in ranked order (best match first). Example: ["id1", "id2", "id3"]
-
-Do not include any other text.`
-
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-opus-4-20250805',
-        max_tokens: 1000,
-        messages: [
-          { role: 'user', content: prompt }
-        ]
-      })
-    })
-
-    if (!response.ok) {
-      console.error('Claude API error:', response.status)
-      return opportunities
+    // Interest match (highest weight)
+    if (profile.interests && profile.interests.length > 0) {
+      const interestTags = opp.interest_tags || []
+      const matches = profile.interests.filter(interest =>
+        interestTags.some(tag => 
+          tag.toLowerCase().includes(interest.toLowerCase()) ||
+          interest.toLowerCase().includes(tag.toLowerCase())
+        )
+      ).length
+      score += matches * 25
     }
 
-    const data = await response.json()
-    const content = data.content[0].text
-    const rankedIds = JSON.parse(content)
+    // Type preference (students often have a type they prefer)
+    if (opp.type === 'scholarship' || opp.type === 'competition') {
+      score += 15
+    }
 
-    const ranked = rankedIds
-      .map(id => opportunities.find(opp => opp.id === id))
-      .filter(Boolean)
+    // Financial need match
+    if (profile.financial_need && opp.amount > 0) {
+      score += 20
+    }
 
-    return ranked.length > 0 ? ranked : opportunities
-  } catch (error) {
-    console.error('AI ranking error:', error)
-    return opportunities
-  }
+    // Deadline urgency (closer deadlines surface higher)
+    if (opp.deadline) {
+      const today = new Date()
+      const deadline = new Date(opp.deadline)
+      const daysLeft = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24))
+      
+      if (daysLeft > 0 && daysLeft <= 7) score += 10
+      if (daysLeft > 7 && daysLeft <= 30) score += 5
+    }
+
+    // High-value opportunities
+    if (opp.amount && opp.amount >= 5000) {
+      score += 10
+    }
+
+    // No essay required bonus
+    if (!opp.requires_essay) {
+      score += 8
+    }
+
+    // Recently added
+    if (opp.created_at) {
+      const today = new Date()
+      const created = new Date(opp.created_at)
+      const daysOld = Math.ceil((today - created) / (1000 * 60 * 60 * 24))
+      if (daysOld <= 7) score += 5
+    }
+
+    return { ...opp, _score: score }
+  })
+
+  // Sort by score descending, then by deadline (closer first)
+  const ranked = scored.sort((a, b) => {
+    if (b._score !== a._score) {
+      return b._score - a._score
+    }
+    
+    // Tiebreaker: closer deadline wins
+    if (a.deadline && b.deadline) {
+      return new Date(a.deadline) - new Date(b.deadline)
+    }
+    return 0
+  })
+
+  // Remove the temporary _score field before returning
+  return ranked.map(({ _score, ...opp }) => opp)
 }
