@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
-import Logo from '../components/Logo'
 
 const TYPES = ['scholarship', 'competition', 'internship', 'program', 'grant']
 const PROVINCES = ['ALL', 'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT']
@@ -121,14 +120,6 @@ export default function Admin() {
 
   return (
     <div style={A.page}>
-      {/* Header */}
-      <div style={A.header}>
-        <Logo />
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button style={A.btnOutline} onClick={() => navigate('/dashboard')}>← Dashboard</button>
-          <button style={A.btnGhost} onClick={signOut}>Sign out</button>
-        </div>
-      </div>
 
       <div style={A.pageTitle}>
         <h1 style={A.title}>Admin panel</h1>
@@ -327,7 +318,7 @@ function typeColor(type) {
 }
 
 const A = {
-  page: { maxWidth: '1100px', margin: '0 auto', padding: '40px 24px 80px', fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" },
+  page: { maxWidth: '1100px', margin: '0 auto', padding: '80px 24px 80px', fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' },
   pageTitle: { marginBottom: '28px' },
   title: { fontSize: '28px', fontWeight: '700', color: '#111', margin: '0 0 6px 0', letterSpacing: '-0.5px' },

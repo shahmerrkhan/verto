@@ -9,7 +9,6 @@ import Toast from '../components/Toast'
 import SortBar from '../components/SortBar'
 import RecommendedSection from '../components/RecommendedSection'
 import ProfileCompletion from '../components/ProfileCompletion'
-import Logo from '../components/Logo'
 import Footer from '../components/Footer'
 
 const QUICK_FILTERS = [
@@ -178,12 +177,12 @@ const styles = {
     color: '#1a1a1a',
     marginBottom: '8px',
   },
-  container: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    padding: '40px 24px',
-  },
-  header: {
+container: {
+  maxWidth: '1200px',
+  margin: '0 auto',
+  padding: 'clamp(80px, 10vw, 96px) clamp(16px, 3vw, 24px) 80px',
+},
+header: {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'flex-start',
@@ -191,6 +190,7 @@ const styles = {
   flexWrap: 'wrap',
   gap: '16px',
 },
+  dashboardTitle: { fontSize: '24px', fontWeight: '700', color: '#111', margin: '0 0 6px 0', letterSpacing: '-0.5px' },
 }
 
 export default function Dashboard() {
@@ -373,47 +373,12 @@ export default function Dashboard() {
     <div style={styles.container} className="container">
       <div style={styles.header} className="header">
         <div>
-          <Logo />
+          <h2 style={styles.dashboardTitle}>Your opportunities</h2>
           <p style={styles.greeting}>
             Hey {profile?.full_name?.split(' ')[0] || 'there'}, here's what we found for you.
           </p>
         </div>
-        <div style={styles.headerButtons}>
-          <button
-            style={styles.profileBtn}
-            onClick={() => navigate('/analytics')}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#064e3b'; e.target.style.color = '#fff' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#064e3b' }}
-          >
-            Analytics
-          </button>
-          <button
-            style={styles.profileBtn}
-            onClick={() => navigate('/profile')}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#064e3b'; e.target.style.color = '#fff' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#064e3b' }}
-          >
-            Profile
-          </button>
-          <button
-            style={styles.savesBtn}
-            onClick={() => navigate('/saves')}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#064e3b'; e.target.style.color = '#fff' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#064e3b' }}
-          >
-            Saved (★)
-          </button>
-          <button
-            style={styles.signOutBtn}
-            onClick={signOut}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#f3f4f6'; e.target.style.borderColor = '#ccc'; e.target.style.color = '#333' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.borderColor = '#e0e0e0'; e.target.style.color = '#666' }}
-          >
-            Sign out
-          </button>
-        </div>
       </div>
-
       <ProfileCompletion profile={profile} />
 
       <div style={styles.quickFiltersContainer}>
@@ -550,4 +515,5 @@ export default function Dashboard() {
     <Footer />
     </div>
   )
+  
 }

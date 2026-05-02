@@ -53,12 +53,13 @@ export default function ProfileCompletion({ profile }) {
 }
 
 const styles = {
-  container: {
+container: {
     backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    borderRadius: '12px',
-    padding: '20px',
-    marginBottom: '32px',
+    border: '1.5px solid #bbf7d0',
+    borderRadius: '14px',
+    padding: '20px 24px',
+    marginBottom: '28px',
+    boxShadow: '0 1px 8px rgba(16,163,92,0.06)',
   },
   header: {
     display: 'flex',

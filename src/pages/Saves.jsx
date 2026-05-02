@@ -3,7 +3,6 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
-import Logo from '../components/Logo'
 import Footer from '../components/Footer'
 
 export default function Saves() {
@@ -316,29 +315,16 @@ function exportCSV() {
   return (
     <div style={S.page}>
       {/* Header */}
-      <div style={S.header}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-          <Logo />
-          <p style={S.subtitle}>
-            {savedOpportunities.length} saved opportunity{savedOpportunities.length !== 1 ? 's' : ''}
-          </p>
-        </div>
-        <div style={S.headerActions}>
-          <button style={S.btnOutline} onClick={() => navigate('/dashboard')}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#064e3b'; e.currentTarget.style.color = '#fff' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#064e3b' }}>
-            ← Dashboard
-          </button>
-            <button
-              onClick={exportCSV}
-              style={{ padding: '8px 16px', borderRadius: '10px', border: '1.5px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#374151', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
-              ↓ Export CSV
-            </button>
-            <button style={S.btnGhost} onClick={signOut}            onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-            onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
-            Sign out
-          </button>
-        </div>
+
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <p style={{ fontSize: '14px', color: '#9ca3af', margin: 0, fontWeight: '400' }}>
+          {savedOpportunities.length} saved opportunity{savedOpportunities.length !== 1 ? 's' : ''}
+        </p>
+        <button
+          onClick={exportCSV}
+          style={{ padding: '8px 16px', borderRadius: '10px', border: '1.5px solid #e5e7eb', backgroundColor: '#f9fafb', color: '#374151', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+          ↓ Export CSV
+        </button>
       </div>
 
         {dueSoon.length > 0 && !dismissedBanner && (
@@ -635,10 +621,10 @@ function exportCSV() {
 }
 
 const S = {
-  page: {
+page: {
     maxWidth: '1140px',
     margin: '0 auto',
-    padding: '40px 24px 80px',
+    padding: '80px 24px 80px',
     fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
   },
   loadingScreen: {
@@ -764,12 +750,12 @@ const S = {
     flexDirection: 'column',
     gap: '14px',
   },
-  controlRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-    flexWrap: 'wrap',
-  },
+ controlRow: {
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: '12px',
+  flexWrap: 'wrap',
+},
   controlLabel: {
     fontSize: '11px',
     fontWeight: '700',
@@ -917,11 +903,11 @@ const S = {
   },
 
   // Grid
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: '20px',
-  },
+grid: {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
+  gap: '20px',
+},
 
   // Card
   card: {

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
-import Logo from '../components/Logo'
 
 
 const INTERESTS = [
@@ -85,6 +84,7 @@ export default function Profile() {
     interests: profile?.interests || [],
     gpa_range: profile?.gpa_range || '',
     financial_need: profile?.financial_need || false,
+    email_alerts: profile?.email_alerts || false,
   })
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -110,6 +110,7 @@ export default function Profile() {
         interests: form.interests,
         gpa_range: form.gpa_range,
         financial_need: form.financial_need,
+        email_alerts: form.email_alerts,
         updated_at: new Date().toISOString(),
       })
       .eq('id', user.id)
@@ -120,29 +121,7 @@ export default function Profile() {
   }
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '40px 24px', animation: 'fadeSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}>
-      <div style={styles.header} className="header">
-        <Logo />
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            style={styles.backBtn}
-            onClick={() => navigate('/dashboard')}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#064e3b'; e.target.style.color = '#fff' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#064e3b' }}
-          >
-            ← Dashboard
-          </button>
-          <button
-            style={styles.signOutBtn}
-            onClick={signOut}
-            onMouseEnter={e => e.target.style.backgroundColor = '#f3f4f6'}
-            onMouseLeave={e => e.target.style.backgroundColor = 'transparent'}
-          >
-            Sign out
-          </button>
-        </div>
-      </div>
-
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 24px 80px', animation: 'fadeSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)', fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}>
       <div style={styles.pageTitle}>
         <h1 style={styles.title}>Your profile</h1>
         <p style={styles.subtitle}>Update your info to get better matched opportunities</p>
@@ -211,6 +190,20 @@ export default function Profile() {
             <div>
               <p style={styles.checkLabel}>I have financial need</p>
               <p style={styles.checkSub}>Unlocks need-based scholarships and grants</p>
+            </div>
+          </div>
+
+          <div style={styles.checkRow} onClick={() => setForm({ ...form, email_alerts: !form.email_alerts })}>
+            <div style={{
+              ...styles.checkbox,
+              backgroundColor: form.email_alerts ? '#064e3b' : '#fff',
+              borderColor: form.email_alerts ? '#064e3b' : '#d1d5db',
+            }}>
+              {form.email_alerts && <span style={styles.checkmark}>✓</span>}
+            </div>
+            <div>
+              <p style={styles.checkLabel}>Email alerts for deadlines</p>
+              <p style={styles.checkSub}>Get notified when saved opportunities close in 3 days</p>
             </div>
           </div>
         </div>
