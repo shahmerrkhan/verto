@@ -7,7 +7,16 @@ export default function MobileNav() {
   const location = useLocation()
   const { user } = useAuth()
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  const [menuOpen, setMenuOpen] = useState(false)
 
+  useEffect(() => {
+    function checkMenu() {
+      setMenuOpen(document.body.classList.contains('menu-open'))
+    }
+    const observer = new MutationObserver(checkMenu)
+    observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
+    return () => observer.disconnect()
+  }, [])
   useEffect(() => {
     function handleResize() {
       setIsMobile(window.innerWidth < 768)
@@ -26,9 +35,10 @@ export default function MobileNav() {
     { path: '/profile', icon: '👤', label: 'Profile' },
   ]
 
+  if (menuOpen) return null
+
   return (
     <>
-      {/* Spacer so content doesn't hide behind nav */}
       <div style={{ height: '72px', display: 'block' }} className="mobile-nav-spacer" />
         <nav style={S.nav} className="mobile-bottom-nav">
         {tabs.map(tab => {

@@ -16,6 +16,15 @@ export default function Navbar() {
   const profileRef = useRef(null)
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+
+    useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.classList.add('menu-open')
+    } else {
+      document.body.classList.remove('menu-open')
+    }
+    return () => document.body.classList.remove('menu-open')
+  }, [mobileMenuOpen])
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
@@ -212,7 +221,7 @@ export default function Navbar() {
       ...styles.navbar,
       backgroundColor: theme.surface,
       borderBottomColor: theme.border,
-      transform: showNavbar ? 'translateY(0)' : 'translateY(-100%)',
+      transform: (showNavbar || mobileMenuOpen) ? 'translateY(0)' : 'translateY(-100%)',      
       transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, box-shadow 0.3s ease',
       boxShadow: scrolled ? `0 8px 32px rgba(0, 0, 0, 0.15)` : 'none',
     }}>
@@ -602,7 +611,7 @@ searchBar: {
     alignItems: 'center',
     justifyContent: 'center',
   },
-  mobileMenu: {
+mobileMenu: {
     borderTop: '1px solid',
     padding: '12px 16px',
     display: 'flex',
@@ -614,7 +623,7 @@ searchBar: {
     right: 0,
     maxHeight: 'calc(100vh - 56px)',
     overflowY: 'auto',
-    zIndex: 999,
+    zIndex: 9999,
   },
   mobileMenuItem: {
     padding: '13px 14px',
