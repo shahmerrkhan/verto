@@ -9,6 +9,7 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <AuthProvider>
       <App />
+        <Analytics />
     </AuthProvider>
   </StrictMode>
 )
