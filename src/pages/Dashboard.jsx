@@ -180,7 +180,8 @@ const styles = {
 container: {
   maxWidth: '1200px',
   margin: '0 auto',
-  padding: 'clamp(80px, 10vw, 96px) clamp(16px, 3vw, 24px) 80px',
+  padding: 'clamp(20px, 5vw, 40px) clamp(16px, 3vw, 24px) 80px',
+  marginTop: '56px',
 },
 header: {
   display: 'flex',

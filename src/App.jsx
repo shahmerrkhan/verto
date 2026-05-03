@@ -18,6 +18,9 @@ import SubmitArticle from './pages/SubmitArticle'
 import ArticleDetail from './pages/ArticleDetail'
 import Research from './pages/Research'
 import AdminArticles from './pages/AdminArticles'
+import { ThemeProvider } from './context/ThemeContext'
+import OpportunityDetail from './pages/OpportunityDetail'
+
 
 
 function App() {
@@ -26,6 +29,7 @@ function App() {
   if (loading) return <div>Loading...</div>
 
   return (
+  <ThemeProvider>
     <BrowserRouter>
       <Navbar />
       <Routes>
@@ -77,6 +81,12 @@ function App() {
         <ArticleDetail />
       } />
 
+      <Route path="/opportunities/:id" element={
+        <ProtectedRoute>
+          <OpportunityDetail />
+        </ProtectedRoute>
+      } />
+
       <Route path="/research" element={
         <Research />
       } />
@@ -94,6 +104,7 @@ function App() {
       </Routes>
       <MobileNav />
     </BrowserRouter>
+  </ThemeProvider>
   )
 }
 
