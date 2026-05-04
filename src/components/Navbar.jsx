@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabase'
 import Logo from './Logo'
+import SearchPalette from './SearchPalette'
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -19,6 +20,7 @@ export default function Navbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [notifications, setNotifications] = useState([])
   const [scrolled, setScrolled] = useState(false)
   const [showNavbar, setShowNavbar] = useState(true)
@@ -39,6 +41,17 @@ export default function Navbar() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+  function handleKeyDown(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault()
+      setSearchOpen(prev => !prev)
+    }
+  }
+  window.addEventListener('keydown', handleKeyDown)
+  return () => window.removeEventListener('keydown', handleKeyDown)
+}, [])
 
   useEffect(() => {
     if (user) {
@@ -174,6 +187,12 @@ export default function Navbar() {
 
           {/* Desktop right */}
           <div className="desktop-right" style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 'fit-content' }}>
+            <button className="icon-btn" onClick={() => setSearchOpen(true)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', padding: '0 12px', height: '36px', cursor: 'pointer', color: '#484f58', fontSize: '13px', fontFamily: 'inherit', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = '#7d8590' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = '#484f58' }}>
+              🔍 <span style={{ fontSize: '11px' }}>Search</span>
+              <kbd style={{ padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.04)', fontSize: '10px', color: '#484f58', fontFamily: 'inherit', marginLeft: '4px' }}>⌘K</kbd>
+            </button>
 
             {/* Notifications */}
             <div style={{ position: 'relative' }} ref={notifRef}>
@@ -295,6 +314,8 @@ export default function Navbar() {
           </div>
         )}
       </nav>
+      {searchOpen && <SearchPalette onClose={() => setSearchOpen(false)} />}
     </>
+    
   )
 }
