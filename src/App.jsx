@@ -20,9 +20,13 @@ import Research from './pages/Research'
 import AdminArticles from './pages/AdminArticles'
 import { ThemeProvider } from './context/ThemeContext'
 import OpportunityDetail from './pages/OpportunityDetail'
+import BackToTop from './components/BackToTop'
+import UrgentNudge from './components/UrgentNudge'
+import { useState } from 'react'
+import ShortcutManager from './components/ShortcutManager'
 
 function App() {
-  const { loading } = useAuth()
+  const { loading, user } = useAuth()
 
   if (loading) return (
     <div style={{
@@ -68,8 +72,11 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
         </Routes>
         <MobileNav />
-      </BrowserRouter>
-    </ThemeProvider>
+      <BackToTop />
+      <ShortcutManager />
+      {user && <UrgentNudge />}
+    </BrowserRouter>
+  </ThemeProvider>
   )
 }
 

@@ -164,7 +164,7 @@ export default function Navbar() {
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
 
           {/* Logo */}
-          <div style={{ minWidth: 'fit-content' }}>
+          <div style={{ minWidth: 'fit-content', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
             <Logo theme={theme} currentTheme={currentTheme} />
           </div>
 
