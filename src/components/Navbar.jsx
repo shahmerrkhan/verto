@@ -10,23 +10,12 @@ export default function Navbar() {
   const location = useLocation()
   const { user, profile, signOut } = useAuth()
   const { theme, currentTheme, switchTheme, THEMES } = useTheme()
-  
+
   const notifRef = useRef(null)
   const themeRef = useRef(null)
   const profileRef = useRef(null)
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-
-    useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.classList.add('menu-open')
-    } else {
-      document.body.classList.remove('menu-open')
-    }
-    return () => document.body.classList.remove('menu-open')
-  }, [mobileMenuOpen])
-  const [searchOpen, setSearchOpen] = useState(false)
-  const [searchQuery, setSearchQuery] = useState('')
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
   const [themeMenuOpen, setThemeMenuOpen] = useState(false)
@@ -35,25 +24,22 @@ export default function Navbar() {
   const [showNavbar, setShowNavbar] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
 
-  // Close dropdowns when clicking outside
+  useEffect(() => {
+    if (mobileMenuOpen) document.body.classList.add('menu-open')
+    else document.body.classList.remove('menu-open')
+    return () => document.body.classList.remove('menu-open')
+  }, [mobileMenuOpen])
+
   useEffect(() => {
     function handleClickOutside(e) {
-      if (notifRef.current && !notifRef.current.contains(e.target)) {
-        setNotificationsOpen(false)
-      }
-      if (themeRef.current && !themeRef.current.contains(e.target)) {
-        setThemeMenuOpen(false)
-      }
-      if (profileRef.current && !profileRef.current.contains(e.target)) {
-        setProfileDropdownOpen(false)
-      }
+      if (notifRef.current && !notifRef.current.contains(e.target)) setNotificationsOpen(false)
+      if (themeRef.current && !themeRef.current.contains(e.target)) setThemeMenuOpen(false)
+      if (profileRef.current && !profileRef.current.contains(e.target)) setProfileDropdownOpen(false)
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  // Fetch real notifications
   useEffect(() => {
     if (user) {
       fetchNotifications()
@@ -66,84 +52,36 @@ export default function Navbar() {
     try {
       const today = new Date()
       const sevenDaysFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-
       const { data: upcomingDeadlines } = await supabase
-        .from('opportunities')
-        .select('id, title, deadline, is_active')
-        .eq('is_active', true)
-        .gte('deadline', today.toISOString())
+        .from('opportunities').select('id, title, deadline, is_active')
+        .eq('is_active', true).gte('deadline', today.toISOString())
         .lte('deadline', sevenDaysFromNow.toISOString())
-        .order('deadline', { ascending: true })
-        .limit(3)
+        .order('deadline', { ascending: true }).limit(3)
 
       const threeDaysAgo = new Date(today.getTime() - 3 * 24 * 60 * 60 * 1000)
       const { data: recentOpps } = await supabase
-        .from('opportunities')
-        .select('id, title, created_at, is_active')
-        .eq('is_active', true)
-        .gte('created_at', threeDaysAgo.toISOString())
-        .order('created_at', { ascending: false })
-        .limit(2)
+        .from('opportunities').select('id, title, created_at, is_active')
+        .eq('is_active', true).gte('created_at', threeDaysAgo.toISOString())
+        .order('created_at', { ascending: false }).limit(2)
 
       const { data: highValue } = await supabase
-        .from('opportunities')
-        .select('id, title, amount, is_active')
-        .eq('is_active', true)
-        .gte('amount', 5000)
-        .order('amount', { ascending: false })
-        .limit(1)
+        .from('opportunities').select('id, title, amount, is_active')
+        .eq('is_active', true).gte('amount', 5000)
+        .order('amount', { ascending: false }).limit(1)
 
       const notifs = []
-
-      if (upcomingDeadlines?.length > 0) {
-        upcomingDeadlines.forEach(opp => {
-          const daysLeft = Math.ceil(
-            (new Date(opp.deadline) - today) / (1000 * 60 * 60 * 24)
-          )
-          notifs.push({
-            id: `deadline-${opp.id}`,
-            type: 'deadline',
-            title: opp.title,
-            message: `Deadline in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`,
-            relatedId: opp.id,
-            time: getTimeAgo(new Date(opp.deadline)),
-            icon: '⏰',
-          })
-        })
-      }
-
-      if (recentOpps?.length > 0) {
-        recentOpps.forEach(opp => {
-          notifs.push({
-            id: `new-${opp.id}`,
-            type: 'new',
-            title: opp.title,
-            message: 'Newly added opportunity',
-            relatedId: opp.id,
-            time: getTimeAgo(new Date(opp.created_at)),
-            icon: '✨',
-          })
-        })
-      }
-
-      if (highValue?.length > 0) {
-        highValue.forEach(opp => {
-          notifs.push({
-            id: `high-value-${opp.id}`,
-            type: 'highValue',
-            title: opp.title,
-            message: `High value: $${opp.amount.toLocaleString()}`,
-            relatedId: opp.id,
-            time: 'Just now',
-            icon: '💰',
-          })
-        })
-      }
-
+      upcomingDeadlines?.forEach(opp => {
+        const daysLeft = Math.ceil((new Date(opp.deadline) - today) / (1000 * 60 * 60 * 24))
+        notifs.push({ id: `deadline-${opp.id}`, type: 'deadline', title: opp.title, message: `Deadline in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}`, relatedId: opp.id, time: getTimeAgo(new Date(opp.deadline)), icon: '⏰' })
+      })
+      recentOpps?.forEach(opp => {
+        notifs.push({ id: `new-${opp.id}`, type: 'new', title: opp.title, message: 'Newly added opportunity', relatedId: opp.id, time: getTimeAgo(new Date(opp.created_at)), icon: '✨' })
+      })
+      highValue?.forEach(opp => {
+        notifs.push({ id: `high-value-${opp.id}`, type: 'highValue', title: opp.title, message: `High value: $${opp.amount.toLocaleString()}`, relatedId: opp.id, time: 'Just now', icon: '💰' })
+      })
       setNotifications(notifs)
-    } catch (error) {
-      console.error('Error fetching notifications:', error)
-    }
+    } catch (error) { console.error('Error fetching notifications:', error) }
   }
 
   function getTimeAgo(date) {
@@ -153,499 +91,210 @@ export default function Navbar() {
     if (minutes < 60) return `${minutes}m ago`
     const hours = Math.floor(minutes / 60)
     if (hours < 24) return `${hours}h ago`
-    const days = Math.floor(hours / 24)
-    return `${days}d ago`
+    return `${Math.floor(hours / 24)}d ago`
   }
 
   useEffect(() => {
     const handleScroll = () => {
       const currentScrollY = window.scrollY
-
       if (currentScrollY > 100) {
-        if (currentScrollY > lastScrollY) {
-          setShowNavbar(false)
-        } else {
-          setShowNavbar(true)
-        }
+        setShowNavbar(currentScrollY <= lastScrollY)
       } else {
         setShowNavbar(true)
       }
-
       setLastScrollY(currentScrollY)
       setScrolled(currentScrollY > 10)
     }
-
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [lastScrollY])
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '🏠' },
-    { path: '/courses', label: 'Courses', icon: '🎓' },
-    { path: '/articles', label: 'Articles', icon: '📝' },
-    { path: '/research', label: 'Research', icon: '📚' },
-    { path: '/saves', label: 'Saved', icon: '★' },
-    { path: '/analytics', label: 'Analytics', icon: '📊' },
-    { path: '/profile', label: 'Profile', icon: '👤' },
+    { path: '/dashboard', label: 'Dashboard', icon: '⊞' },
+    { path: '/courses', label: 'Courses', icon: '◈' },
+    { path: '/articles', label: 'Articles', icon: '◎' },
+    { path: '/research', label: 'Research', icon: '⬡' },
+    { path: '/saves', label: 'Saved', icon: '◇' },
+    { path: '/analytics', label: 'Analytics', icon: '▲' },
+    { path: '/profile', label: 'Profile', icon: '○' },
   ]
 
   const isActive = (path) => location.pathname === path
-
-  const handleLogout = () => {
-    signOut()
-    navigate('/')
-    setMobileMenuOpen(false)
-    setProfileDropdownOpen(false)
-  }
-
-  const handleSearch = (e) => {
-    e.preventDefault()
-    if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery)
-      setSearchQuery('')
-      setSearchOpen(false)
-    }
-  }
-
-  const handleNotificationClick = (notification) => {
-    navigate(`/opportunities/${notification.relatedId}`)
-    setNotificationsOpen(false)
-  }
+  const handleLogout = () => { signOut(); navigate('/'); setMobileMenuOpen(false); setProfileDropdownOpen(false) }
+  const handleNotificationClick = (notification) => { navigate(`/opportunities/${notification.relatedId}`); setNotificationsOpen(false) }
 
   const publicPaths = ['/', '/login', '/signup']
   if (publicPaths.includes(location.pathname)) return null
   if (!user) return null
 
   return (
-    <nav style={{
-      ...styles.navbar,
-      backgroundColor: theme.surface,
-      borderBottomColor: theme.border,
-      transform: (showNavbar || mobileMenuOpen) ? 'translateY(0)' : 'translateY(-100%)',      
-      transition: 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease, box-shadow 0.3s ease',
-      boxShadow: scrolled ? `0 8px 32px rgba(0, 0, 0, 0.15)` : 'none',
-    }}>
-      <div style={styles.container}>
+    <>
+      <style>{`
+        @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+        @media (max-width: 1024px) { .desktop-nav { display:none!important; } .mobile-hamburger { display:flex!important; } .desktop-right { display:none!important; } }
+        @media (min-width: 1025px) { .mobile-hamburger { display:none!important; } }
+        .nav-item:hover { background: rgba(245,158,11,0.08)!important; color: #f59e0b!important; }
+        .icon-btn:hover { background: rgba(255,255,255,0.06)!important; }
+        .dropdown-item:hover { background: rgba(255,255,255,0.05)!important; }
+        .mobile-menu-item:hover { background: rgba(255,255,255,0.06)!important; }
+      `}</style>
 
-        {/* Logo */}
-        <div style={styles.left}>
-          <Logo theme={theme} currentTheme={currentTheme} />
-        </div>
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+        backgroundColor: scrolled ? 'rgba(13,17,23,0.95)' : 'rgba(13,17,23,0.8)',
+        backdropFilter: 'blur(16px)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        transform: (showNavbar || mobileMenuOpen) ? 'translateY(0)' : 'translateY(-100%)',
+        transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1), background-color 0.3s ease, box-shadow 0.3s ease',
+        boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.4)' : 'none',
+      }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
 
-        {/* Desktop center nav — hidden on mobile */}
-        <div style={{
-          ...styles.center,
-          display: 'flex',
-        }}>
-          <style>{`
-            @media (max-width: 1024px) {
-              .desktop-nav { display: none !important; }
-              .mobile-hamburger { display: flex !important; }
-              .desktop-right { display: none !important; }
-            }
-            @media (min-width: 1025px) {
-              .mobile-hamburger { display: none !important; }
-            }
-          `}</style>
-          <div className="desktop-nav" style={{ display: 'flex', gap: '4px' }}>
+          {/* Logo */}
+          <div style={{ minWidth: 'fit-content' }}>
+            <Logo theme={theme} currentTheme={currentTheme} />
+          </div>
+
+          {/* Desktop nav */}
+          <div className="desktop-nav" style={{ display: 'flex', gap: '2px', flex: 1, justifyContent: 'center' }}>
             {navItems.map(item => (
-              <button
-                key={item.path}
-                style={{
-                  ...styles.navItem,
-                  color: isActive(item.path) ? theme.accent : theme.secondary,
-                  backgroundColor: isActive(item.path) ? theme.hover : 'transparent',
-                }}
-                onClick={() => navigate(item.path)}
-              >
-                <span style={styles.navIcon}>{item.icon}</span>
-                <span style={styles.navLabel}>{item.label}</span>
+              <button key={item.path} className="nav-item" onClick={() => navigate(item.path)} style={{
+                padding: '7px 12px', borderRadius: '8px', border: 'none', cursor: 'pointer',
+                fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px',
+                transition: 'all 0.15s ease', fontFamily: 'inherit',
+                color: isActive(item.path) ? '#f59e0b' : '#7d8590',
+                backgroundColor: isActive(item.path) ? 'rgba(245,158,11,0.1)' : 'transparent',
+                letterSpacing: '0.1px',
+              }}>
+                <span style={{ fontSize: '11px', opacity: 0.8 }}>{item.icon}</span>
+                {item.label}
               </button>
             ))}
           </div>
-        </div>
 
-        {/* Desktop right icons — hidden on mobile */}
-        <div className="desktop-right" style={styles.right}>
-          {/* Notifications */}
-          <div style={styles.notificationContainer} ref={notifRef}>
-            <button onClick={() => setNotificationsOpen(!notificationsOpen)} style={{ ...styles.iconBtn, color: theme.text }}>
-              🔔
-              {notifications.length > 0 && (
-                <span style={{ ...styles.badge, backgroundColor: theme.accent }}>{notifications.length}</span>
-              )}
-            </button>
-            {notificationsOpen && (
-              <div style={{ ...styles.dropdown, backgroundColor: theme.surface, borderColor: theme.border }}>
-                <p style={{ ...styles.dropdownHeader, color: theme.text, borderBottomColor: theme.border }}>Notifications</p>
-                {notifications.length > 0 ? notifications.map(notif => (
-                  <button key={notif.id} onClick={() => handleNotificationClick(notif)}
-                    style={{ ...styles.notificationItem, backgroundColor: theme.bg, color: theme.text, borderColor: theme.border }}>
-                    <span style={{ fontSize: '16px', marginRight: '8px' }}>{notif.icon}</span>
-                    <div style={{ textAlign: 'left', flex: 1 }}>
-                      <p style={{ margin: '0 0 4px 0', fontSize: '13px', fontWeight: '600', color: theme.text }}>{notif.title}</p>
-                      <p style={{ margin: '0', fontSize: '11px', color: theme.secondary }}>{notif.message} • {notif.time}</p>
-                    </div>
-                  </button>
-                )) : (
-                  <p style={{ padding: '14px 16px', color: theme.secondary, margin: 0, fontSize: '13px' }}>No notifications</p>
+          {/* Desktop right */}
+          <div className="desktop-right" style={{ display: 'flex', gap: '8px', alignItems: 'center', minWidth: 'fit-content' }}>
+
+            {/* Notifications */}
+            <div style={{ position: 'relative' }} ref={notifRef}>
+              <button className="icon-btn" onClick={() => setNotificationsOpen(!notificationsOpen)} style={{
+                position: 'relative', background: 'none', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center',
+                justifyContent: 'center', cursor: 'pointer', color: '#7d8590', fontSize: '16px',
+                transition: 'all 0.15s ease',
+              }}>
+                🔔
+                {notifications.length > 0 && (
+                  <span style={{ position: 'absolute', top: '-4px', right: '-4px', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '9px', fontWeight: '800', padding: '2px 5px', borderRadius: '6px', minWidth: '16px', textAlign: 'center', lineHeight: '12px' }}>
+                    {notifications.length}
+                  </span>
                 )}
-              </div>
-            )}
-          </div>
-
-          {/* Theme */}
-          <div style={styles.themeContainer} ref={themeRef}>
-            <button onClick={() => setThemeMenuOpen(!themeMenuOpen)} style={{ ...styles.iconBtn, color: theme.text }}>🎨</button>
-            {themeMenuOpen && (
-              <div style={{ ...styles.dropdown, backgroundColor: theme.surface, borderColor: theme.border, width: '200px' }}>
-                <p style={{ ...styles.dropdownHeader, color: theme.text, borderBottomColor: theme.border }}>Theme</p>
-                {Object.entries(THEMES).map(([key, t]) => (
-                  <button key={key} onClick={() => { switchTheme(key); setThemeMenuOpen(false) }}
-                    style={{ ...styles.themeOption, backgroundColor: currentTheme === key ? theme.hover : theme.bg, color: theme.text,
-                      borderColor: currentTheme === key ? theme.accent : theme.border, borderWidth: currentTheme === key ? '2px' : '1px' }}>
-                    <span style={{ marginRight: '8px' }}>{t.emoji}</span>{t.name}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Profile */}
-          <div style={styles.profileContainer} ref={profileRef}>
-            <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-              style={{ ...styles.profileBtn, backgroundColor: theme.hover, color: theme.text, borderColor: theme.border }}>
-              <span style={{ fontSize: '12px', fontWeight: '600' }}>{profile?.full_name?.split(' ')[0] || 'User'}</span>
-              <span style={{ fontSize: '10px' }}>▼</span>
-            </button>
-            {profileDropdownOpen && (
-              <div style={{ ...styles.dropdown, backgroundColor: theme.surface, borderColor: theme.border }}>
-                <p style={{ ...styles.dropdownHeader, color: theme.text, borderBottomColor: theme.border }}>{profile?.full_name || 'Account'}</p>
-                <button onClick={() => { navigate('/profile'); setProfileDropdownOpen(false) }}
-                  style={{ ...styles.dropdownItem, color: theme.text, backgroundColor: theme.bg }}>👤 Profile</button>
-                <button onClick={() => { navigate('/analytics'); setProfileDropdownOpen(false) }}
-                  style={{ ...styles.dropdownItem, color: theme.text, backgroundColor: theme.bg }}>📊 Analytics</button>
-                <button onClick={handleLogout}
-                  style={{ ...styles.dropdownItem, color: '#ef4444', backgroundColor: theme.bg, borderTop: `1px solid ${theme.border}`, marginTop: '8px', paddingTop: '12px' }}>
-                  🚪 Sign out
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Mobile hamburger — only shows on mobile */}
-        <button
-          className="mobile-hamburger"
-          style={{ ...styles.mobileMenuBtn, color: theme.text, display: 'none' }}
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-        >
-          {mobileMenuOpen ? '✕' : '☰'}
-        </button>
-      </div>
-
-      {/* Mobile dropdown menu */}
-      {mobileMenuOpen && (
-        <div style={{
-          ...styles.mobileMenu,
-          backgroundColor: theme.surface,
-          borderTopColor: theme.border,
-          animation: 'slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-        }}>
-          {navItems.map(item => (
-            <button key={item.path}
-              style={{ ...styles.mobileMenuItem, color: isActive(item.path) ? theme.accent : theme.text,
-                backgroundColor: isActive(item.path) ? theme.hover : theme.bg }}
-              onClick={() => { navigate(item.path); setMobileMenuOpen(false) }}>
-              <span>{item.icon}</span> {item.label}
-            </button>
-          ))}
-
-          {/* Notifications in mobile menu */}
-          <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: '8px', paddingTop: '8px', width: '100%', boxSizing: 'border-box' }}>
-            <p style={{ fontSize: '11px', fontWeight: '700', color: theme.secondary, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '4px 14px 8px', margin: 0 }}>Notifications</p>
-            {notifications.length > 0 ? notifications.slice(0, 3).map(notif => (
-              <button key={notif.id} onClick={() => { handleNotificationClick(notif); setMobileMenuOpen(false) }}
-                style={{ ...styles.mobileMenuItem, flexDirection: 'column', alignItems: 'flex-start', gap: '4px',
-                  backgroundColor: theme.bg, width: '100%', boxSizing: 'border-box', borderRadius: '8px',
-                  border: `1px solid ${theme.border}`, padding: '12px 14px' }}>
-                <span style={{ fontSize: '13px', fontWeight: '600', color: theme.text, display: 'block',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%' }}>
-                  {notif.icon} {notif.title}
-                </span>
-                <span style={{ fontSize: '11px', color: theme.secondary, display: 'block' }}>{notif.message}</span>
               </button>
-            )) : (
-              <p style={{ fontSize: '13px', color: theme.secondary, padding: '4px 14px' }}>No notifications</p>
-            )}
-          </div>
+              {notificationsOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '320px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#161b22', boxShadow: '0 20px 48px rgba(0,0,0,0.6)', zIndex: 2000, maxHeight: '360px', overflowY: 'auto', animation: 'slideDown 0.2s ease' }}>
+                  <p style={{ padding: '12px 16px', fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.06)', margin: 0 }}>Notifications</p>
+                  {notifications.length > 0 ? notifications.map(notif => (
+                    <button key={notif.id} className="dropdown-item" onClick={() => handleNotificationClick(notif)} style={{ width: '100%', padding: '12px 14px', border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)', cursor: 'pointer', fontSize: '13px', display: 'flex', alignItems: 'flex-start', gap: '10px', fontFamily: 'inherit', background: 'none', color: '#e6edf3', transition: 'background 0.15s', textAlign: 'left' }}>
+                      <span style={{ fontSize: '15px', flexShrink: 0 }}>{notif.icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <p style={{ margin: '0 0 3px 0', fontSize: '13px', fontWeight: '600', color: '#e6edf3' }}>{notif.title}</p>
+                        <p style={{ margin: 0, fontSize: '11px', color: '#7d8590' }}>{notif.message} · {notif.time}</p>
+                      </div>
+                    </button>
+                  )) : (
+                    <p style={{ padding: '20px 16px', color: '#484f58', margin: 0, fontSize: '13px', textAlign: 'center' }}>No notifications</p>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* Theme picker in mobile menu */}
-          <div style={{ borderTop: `1px solid ${theme.border}`, marginTop: '8px', paddingTop: '8px' }}>
-            <p style={{ fontSize: '11px', fontWeight: '700', color: theme.secondary, textTransform: 'uppercase', letterSpacing: '0.5px', padding: '4px 14px 8px' }}>Theme</p>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '0 14px' }}>
-              {Object.entries(THEMES).map(([key, t]) => (
-                <button key={key} onClick={() => { switchTheme(key); setMobileMenuOpen(false) }}
-                  style={{ padding: '8px 12px', borderRadius: '8px', border: `2px solid ${currentTheme === key ? theme.accent : theme.border}`,
-                    backgroundColor: currentTheme === key ? theme.hover : theme.bg, color: theme.text, fontSize: '12px', fontWeight: '600',
-                    cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s ease' }}>
-                  {t.emoji} {t.name}
-                </button>
-              ))}
+            {/* Theme */}
+            <div style={{ position: 'relative' }} ref={themeRef}>
+              <button className="icon-btn" onClick={() => setThemeMenuOpen(!themeMenuOpen)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#7d8590', fontSize: '16px', transition: 'all 0.15s ease' }}>🎨</button>
+              {themeMenuOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '200px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#161b22', boxShadow: '0 20px 48px rgba(0,0,0,0.6)', zIndex: 2000, overflow: 'hidden', animation: 'slideDown 0.2s ease' }}>
+                  <p style={{ padding: '10px 14px', fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', borderBottom: '1px solid rgba(255,255,255,0.06)', margin: 0 }}>Theme</p>
+                  {Object.entries(THEMES).map(([key, t]) => (
+                    <button key={key} className="dropdown-item" onClick={() => { switchTheme(key); setThemeMenuOpen(false) }} style={{ width: '100%', padding: '10px 14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: currentTheme === key ? '700' : '400', textAlign: 'left', transition: 'background 0.15s', fontFamily: 'inherit', color: currentTheme === key ? '#f59e0b' : '#e6edf3', background: currentTheme === key ? 'rgba(245,158,11,0.08)' : 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span>{t.emoji}</span>{t.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Profile */}
+            <div style={{ position: 'relative' }} ref={profileRef}>
+              <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.15s ease', fontFamily: 'inherit', backgroundColor: 'rgba(255,255,255,0.04)', color: '#e6edf3' }}>
+                <span style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', color: '#0d1117' }}>
+                  {(profile?.full_name?.charAt(0) || 'U').toUpperCase()}
+                </span>
+                <span>{profile?.full_name?.split(' ')[0] || 'Account'}</span>
+                <span style={{ fontSize: '9px', color: '#7d8590' }}>▼</span>
+              </button>
+              {profileDropdownOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '200px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#161b22', boxShadow: '0 20px 48px rgba(0,0,0,0.6)', zIndex: 2000, overflow: 'hidden', animation: 'slideDown 0.2s ease' }}>
+                  <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                    <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#e6edf3' }}>{profile?.full_name || 'Account'}</p>
+                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#7d8590' }}>Student</p>
+                  </div>
+                  {[{ label: '○  Profile', path: '/profile' }, { label: '▲  Analytics', path: '/analytics' }].map(item => (
+                    <button key={item.path} className="dropdown-item" onClick={() => { navigate(item.path); setProfileDropdownOpen(false) }} style={{ width: '100%', padding: '11px 14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500', textAlign: 'left', transition: 'background 0.15s', fontFamily: 'inherit', color: '#e6edf3', background: 'none' }}>
+                      {item.label}
+                    </button>
+                  ))}
+                  <button onClick={handleLogout} style={{ width: '100%', padding: '11px 14px', border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', textAlign: 'left', fontFamily: 'inherit', color: '#f85149', background: 'none', transition: 'background 0.15s' }}>
+                    Sign out
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
-          <button onClick={handleLogout}
-            style={{ ...styles.mobileSignOut, color: '#ef4444', backgroundColor: theme.bg, marginTop: '12px', borderTop: `1px solid ${theme.border}`, paddingTop: '16px' }}>
-            🚪 Sign out
+          {/* Mobile hamburger */}
+          <button className="mobile-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ display: 'none', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', width: '36px', height: '36px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#e6edf3', fontSize: '16px', fontFamily: 'inherit' }}>
+            {mobileMenuOpen ? '✕' : '☰'}
           </button>
         </div>
-      )}
-    </nav>
+
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div style={{ backgroundColor: '#0d1117', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px 20px', position: 'fixed', top: '60px', left: 0, right: 0, maxHeight: 'calc(100vh - 60px)', overflowY: 'auto', zIndex: 9999, animation: 'slideDown 0.25s ease' }}>
+            {navItems.map(item => (
+              <button key={item.path} className="mobile-menu-item" onClick={() => { navigate(item.path); setMobileMenuOpen(false) }} style={{ width: '100%', padding: '13px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.15s ease', fontFamily: 'inherit', color: isActive(item.path) ? '#f59e0b' : '#e6edf3', backgroundColor: isActive(item.path) ? 'rgba(245,158,11,0.08)' : 'transparent', marginBottom: '2px' }}>
+                <span style={{ fontSize: '13px' }}>{item.icon}</span> {item.label}
+              </button>
+            ))}
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '12px', paddingTop: '12px' }}>
+              <p style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', padding: '0 14px 10px', margin: 0 }}>Notifications</p>
+              {notifications.length > 0 ? notifications.slice(0, 3).map(notif => (
+                <button key={notif.id} className="mobile-menu-item" onClick={() => { handleNotificationClick(notif); setMobileMenuOpen(false) }} style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#161b22', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', marginBottom: '6px', display: 'block' }}>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: '#e6edf3', display: 'block', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{notif.icon} {notif.title}</span>
+                  <span style={{ fontSize: '11px', color: '#7d8590' }}>{notif.message}</span>
+                </button>
+              )) : (
+                <p style={{ fontSize: '13px', color: '#484f58', padding: '0 14px 8px' }}>No notifications</p>
+              )}
+            </div>
+
+            <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: '8px', paddingTop: '12px' }}>
+              <p style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', padding: '0 14px 10px', margin: 0 }}>Theme</p>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '0 14px' }}>
+                {Object.entries(THEMES).map(([key, t]) => (
+                  <button key={key} onClick={() => { switchTheme(key); setMobileMenuOpen(false) }} style={{ padding: '7px 12px', borderRadius: '8px', border: `1px solid ${currentTheme === key ? '#f59e0b' : 'rgba(255,255,255,0.08)'}`, backgroundColor: currentTheme === key ? 'rgba(245,158,11,0.1)' : '#161b22', color: currentTheme === key ? '#f59e0b' : '#e6edf3', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    {t.emoji} {t.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <button onClick={handleLogout} style={{ width: '100%', marginTop: '16px', padding: '13px 14px', borderRadius: '10px', border: '1px solid rgba(248,81,73,0.2)', background: 'rgba(248,81,73,0.06)', color: '#f85149', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}>
+              Sign out
+            </button>
+          </div>
+        )}
+      </nav>
+    </>
   )
-}
-
-const styles = {
-  navbar: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1000,
-    width: '100%',
-    borderBottom: '1px solid',
-  },
-  container: {
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '14px 20px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  left: { minWidth: 'fit-content' },
-  
-searchBar: {
-  display: window.innerWidth < 1024 ? 'none' : 'flex',
-  alignItems: 'center',
-  gap: '8px',
-  flex: '0 1 300px',
-},
-
-  searchInput: {
-    flex: 1,
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1.5px solid',
-    fontSize: '13px',
-    fontFamily: 'inherit',
-    outline: 'none',
-    transition: 'all 0.2s ease',
-  },
-  searchBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: '16px',
-    cursor: 'pointer',
-    padding: '4px 8px',
-  },
-  mobileSearchBar: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '12px 16px',
-    borderTop: '1px solid',
-  },
-  mobileSearchInput: {
-    flex: 1,
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '1.5px solid',
-    fontSize: '13px',
-    fontFamily: 'inherit',
-    outline: 'none',
-  },
-  center: {
-    display: 'flex',
-    gap: '4px',
-    flex: 1,
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-  },
-  right: {
-    display: 'flex',
-    gap: '14px',
-    alignItems: 'center',
-    minWidth: 'fit-content',
-  },
-  navItem: {
-    padding: '8px 10px',
-    borderRadius: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '600',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-    fontFamily: 'inherit',
-  },
-  navIcon: { fontSize: '14px' },
-  navLabel: { display: 'inline' },
-  iconBtn: {
-    background: 'none',
-    border: 'none',
-    fontSize: '18px',
-    cursor: 'pointer',
-    padding: '6px 8px',
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
-    transition: 'transform 0.2s ease',
-  },
-  notificationContainer: {
-    position: 'relative',
-  },
-  badge: {
-    position: 'absolute',
-    top: '-4px',
-    right: '-4px',
-    color: '#fff',
-    fontSize: '10px',
-    fontWeight: '700',
-    padding: '3px 5px',
-    borderRadius: '6px',
-    minWidth: '18px',
-    textAlign: 'center',
-  },
-  dropdown: {
-    position: 'absolute',
-    top: '100%',
-    right: 0,
-    marginTop: '10px',
-    width: '320px',
-    borderRadius: '12px',
-    border: '1.5px solid',
-    boxShadow: '0 20px 48px rgba(0, 0, 0, 0.2)',
-    zIndex: 2000,
-    maxHeight: '360px',
-    overflowY: 'auto',
-    animation: 'slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-  },
-  dropdownHeader: {
-    padding: '14px 16px',
-    fontSize: '11px',
-    fontWeight: '700',
-    textTransform: 'uppercase',
-    letterSpacing: '0.6px',
-    borderBottom: '1px solid',
-    margin: '0',
-  },
-  dropdownItem: {
-    width: '100%',
-    padding: '13px 16px',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: '500',
-    textAlign: 'left',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-  },
-  notificationItem: {
-    width: '100%',
-    padding: '13px 14px',
-    border: 'none',
-    borderBottom: '1px solid',
-    cursor: 'pointer',
-    fontSize: '13px',
-    display: 'flex',
-    alignItems: 'flex-start',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-    background: 'none',
-  },
-  themeContainer: {
-    position: 'relative',
-  },
-  themeOption: {
-    width: '100%',
-    padding: '11px 14px',
-    border: '1.5px solid',
-    cursor: 'pointer',
-    fontSize: '13px',
-    fontWeight: '500',
-    textAlign: 'left',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-    background: 'none',
-    display: 'flex',
-    alignItems: 'center',
-  },
-  profileContainer: {
-    position: 'relative',
-  },
-  profileBtn: {
-    padding: '8px 13px',
-    borderRadius: '8px',
-    border: '1.5px solid',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: '600',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-  },
-  mobileMenuBtn: {
-    display: 'none',
-    fontSize: '20px',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    padding: '6px 8px',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-mobileMenu: {
-    borderTop: '1px solid',
-    padding: '12px 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    position: 'fixed',
-    top: '56px',
-    left: 0,
-    right: 0,
-    maxHeight: 'calc(100vh - 56px)',
-    overflowY: 'auto',
-    zIndex: 9999,
-  },
-  mobileMenuItem: {
-    padding: '13px 14px',
-    borderRadius: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    transition: 'all 0.2s ease',
-    fontFamily: 'inherit',
-  },
-  mobileSignOut: {
-    padding: '13px 14px',
-    borderRadius: '8px',
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: '14px',
-    fontWeight: '600',
-    marginTop: '8px',
-    fontFamily: 'inherit',
-  },
 }

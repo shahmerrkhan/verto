@@ -1,271 +1,115 @@
-  import { useState } from 'react'
-  import OpportunityModal from './OpportunityModal'
+import { useState } from 'react'
+import OpportunityModal from './OpportunityModal'
 
-  export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
-    const [showModal, setShowModal] = useState(false)
-    const [isHovering, setIsHovering] = useState(false)
-    const { type, title, org_name, description, deadline, amount } = opportunity
+export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
+  const [showModal, setShowModal] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
+  const { type, title, org_name, description, deadline, amount } = opportunity
 
-    // Helper to open modal and log the view for analytics
-    const handleViewDetails = () => {
-      onLogView(opportunity.id)
-      setShowModal(true)
-    }
-    return (
-      <>
-        <div 
-          style={{
-            ...styles.card,
-            borderColor: deadlineUrgency === 'urgent' ? '#ef4444' : deadlineUrgency === 'soon' ? '#f59e0b' : '#e5e7eb',
-            borderWidth: deadlineUrgency === 'urgent' ? '2px' : '1px',
-            transform: isHovering ? 'translateY(-8px)' : 'translateY(0)',
-            boxShadow: isHovering ? '0 12px 24px rgba(0,0,0,0.1)' : '0 1px 4px rgba(0,0,0,0.05)',
-          }}
-          onMouseEnter={() => setIsHovering(true)}
-          onMouseLeave={() => setIsHovering(false)}
-          onClick={handleViewDetails}
-        >
-          {(deadlineUrgency === 'urgent' || deadlineUrgency === 'soon') && (
+  const handleViewDetails = () => { onLogView(opportunity.id); setShowModal(true) }
+
+  const typeConfig = {
+    scholarship: { bg: 'rgba(63,185,80,0.12)', color: '#3fb950', label: 'Scholarship' },
+    competition:  { bg: 'rgba(99,102,241,0.12)', color: '#818cf8', label: 'Competition' },
+    internship:   { bg: 'rgba(245,158,11,0.12)', color: '#f59e0b', label: 'Internship' },
+    program:      { bg: 'rgba(168,85,247,0.12)', color: '#c084fc', label: 'Program' },
+    grant:        { bg: 'rgba(248,81,73,0.12)', color: '#f85149', label: 'Grant' },
+  }
+  const cfg = typeConfig[type] || { bg: 'rgba(125,133,144,0.12)', color: '#7d8590', label: type }
+
+  return (
+    <>
+      <div className="v-card" style={{
+        backgroundColor: '#161b22',
+        border: deadlineUrgency === 'urgent'
+          ? '1.5px solid rgba(248,81,73,0.4)'
+          : '1px solid rgba(255,255,255,0.07)',
+        borderRadius: '14px',
+        padding: '0',
+        display: 'flex', flexDirection: 'column',
+        cursor: 'pointer', overflow: 'hidden',
+        position: 'relative',
+      }}
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+        onClick={handleViewDetails}
+      >
+        {/* Urgency banner */}
+        {(deadlineUrgency === 'urgent' || deadlineUrgency === 'soon') && (
           <div style={{
-            ...styles.urgencyBanner,
-            backgroundColor: deadlineUrgency === 'urgent' ? '#fef2f2' : '#fffbeb',
-            color: deadlineUrgency === 'urgent' ? '#dc2626' : '#b45309',
-            borderBottom: deadlineUrgency === 'urgent' ? '1px solid #fecaca' : '1px solid #fde68a',
+            padding: '7px 16px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.3px',
+            backgroundColor: deadlineUrgency === 'urgent' ? 'rgba(248,81,73,0.12)' : 'rgba(245,158,11,0.10)',
+            color: deadlineUrgency === 'urgent' ? '#f85149' : '#f59e0b',
+            borderBottom: deadlineUrgency === 'urgent' ? '1px solid rgba(248,81,73,0.2)' : '1px solid rgba(245,158,11,0.15)',
           }}>
-            {deadlineUrgency === 'urgent' ? '🔴 Closing very soon' : '🟡 Deadline this week'}
+            {deadlineUrgency === 'urgent' ? '● Closing very soon' : '● Deadline this week'}
           </div>
         )}
-        <div style={styles.cardTop}>
-            <span style={{
-              ...styles.badge,
-              backgroundColor: badgeColor(type),
-              color: badgeTextColor(type),
-            }}>
-              {type}
+
+        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
+          {/* Top row */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', backgroundColor: cfg.bg, color: cfg.color }}>
+              {cfg.label}
             </span>
-            <button
-              style={{
-                ...styles.saveBtn,
-                transform: isHovering ? 'scale(1.1)' : 'scale(1)',
-              }}
-              onClick={(e) => {
-                e.stopPropagation()
-                onToggleSave(opportunity.id)
-              }}
-            >
+            <button onClick={(e) => { e.stopPropagation(); onToggleSave(opportunity.id) }} style={{
+              background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer',
+              color: isSaved ? '#f59e0b' : '#484f58', transition: 'all 0.2s ease', padding: '2px',
+              transform: isHovering ? 'scale(1.15)' : 'scale(1)',
+            }}>
               {isSaved ? '★' : '☆'}
             </button>
           </div>
 
-          <h3 style={styles.cardTitle}>{title}</h3>
-          <p style={styles.orgName}>{org_name}</p>
-          <p style={styles.description}>{description}</p>
+          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#e6edf3', margin: 0, lineHeight: 1.35, fontFamily: "'Syne', sans-serif" }}>{title}</h3>
+          <p style={{ fontSize: '12px', color: '#7d8590', fontWeight: '500', margin: 0 }}>{org_name}</p>
+          <p style={{ fontSize: '13px', color: '#7d8590', lineHeight: 1.6, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>{description}</p>
 
-          <div style={styles.cardFooter}>
+          {/* Footer */}
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto' }}>
             {deadline && (
-              <span style={{
-                ...styles.deadline,
-                color: deadlineUrgency === 'urgent' ? '#dc2626' : deadlineUrgency === 'soon' ? '#b45309' : '#6b7280',
-                fontWeight: deadlineUrgency === 'urgent' || deadlineUrgency === 'soon' ? '700' : '500',
-              }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: deadlineUrgency === 'urgent' ? '#f85149' : deadlineUrgency === 'soon' ? '#f59e0b' : '#484f58' }}>
                 📅 {new Date(deadline).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
               </span>
             )}
             {amount > 0 && (
-              <span style={styles.amount}>
-                💰 {amount === 1 ? "Value Varies" : `$${amount.toLocaleString()}`}
+              <span style={{ fontSize: '12px', fontWeight: '700', color: '#3fb950' }}>
+                💰 {amount === 1 ? 'Varies' : `$${amount.toLocaleString()}`}
               </span>
             )}
           </div>
 
+          {/* Hover CTA */}
           {isHovering && (
-          <div style={styles.ctaContainer}>
-          <button style={styles.ctaBtn} onClick={(e) => { e.stopPropagation(); handleViewDetails() }}>
-            View details →
-          </button>
-              {!isApplied ? (
-              <button
-                  style={styles.applyBtn}
-                  onClick={(e) => {
-                  e.stopPropagation()
-                  onTrackApplication(opportunity.id)
-                  }}
-              >
-                  Mark applied
+            <div style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', animation: 'slideUp 0.2s ease' }}>
+              <button style={{ flex: 1, padding: '9px 12px', backgroundColor: '#f59e0b', color: '#0d1117', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', letterSpacing: '0.2px' }}
+                onClick={(e) => { e.stopPropagation(); handleViewDetails() }}>
+                View details →
               </button>
+              {!isApplied ? (
+                <button style={{ padding: '9px 12px', backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
+                  onClick={(e) => { e.stopPropagation(); onTrackApplication(opportunity.id) }}>
+                  Mark applied
+                </button>
               ) : (
-              <span style={styles.appliedBadge}>✓ Applied</span>
+                <span style={{ padding: '9px 12px', backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '600', borderRadius: '8px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
+                  ✓ Applied
+                </span>
               )}
-          </div>
+            </div>
           )}
         </div>
+      </div>
 
-        {showModal && (
-          <OpportunityModal
-            opportunity={opportunity}
-            isSaved={isSaved}
-            onToggleSave={onToggleSave}
-            onLogView={onLogView} // Corrected: Use the prop name
-            onClose={() => setShowModal(false)}
-          />
-        )}
-      </>
-    )
-  }
-
-  function badgeColor(type) {
-    const colors = {
-      scholarship: '#10b981',
-      competition: '#3b82f6',
-      internship: '#f59e0b',
-      program: '#8b5cf6',
-      grant: '#ef4444',
-    }
-    return colors[type] || '#6b7280'
-  }
-
-  function badgeTextColor(type) {
-    return '#fff'
-  }
-
-  const styles = {
-    card: {
-      backgroundColor: '#fff',
-      border: '1px solid #e5e7eb',
-      borderRadius: '16px',
-      padding: '24px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '12px',
-      cursor: 'pointer',
-      transition: 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-      position: 'relative',
-      overflow: 'hidden',
-    },
-    cardTop: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: '8px',
-    },
-    badge: {
-      display: 'inline-block',
-      padding: '6px 12px',
-      borderRadius: '20px',
-      fontSize: '11px',
-      fontWeight: '700',
-      textTransform: 'uppercase',
-      letterSpacing: '0.5px',
-    },
-    saveBtn: {
-      background: 'none',
-      border: 'none',
-      fontSize: '24px',
-      cursor: 'pointer',
-      color: '#f59e0b',
-      padding: '0',
-      transition: 'all 0.2s',
-    },
-    urgencyBanner: {
-    margin: '-24px -24px 0 -24px',
-    padding: '7px 16px',
-    fontSize: '12px',
-    fontWeight: '600',
-    letterSpacing: '0.2px',
-  },
-    cardTitle: {
-      fontSize: '18px',
-      fontWeight: '700',
-      color: '#1a1a1a',
-      margin: '0 0 4px 0',
-      lineHeight: '1.4',
-    },
-    orgName: {
-      fontSize: '13px',
-      color: '#6b7280',
-      fontWeight: '500',
-      margin: '0',
-    },
- description: {
-  fontSize: '14px',
-  color: '#4b5563',
-  lineHeight: '1.6',
-  flex: 1,
-  margin: '8px 0',
-  display: '-webkit-box',
-  WebkitLineClamp: 3,
-  WebkitBoxOrient: 'vertical',
-  overflow: 'hidden',
-},
-    cardFooter: {
-      display: 'flex',
-      gap: '16px',
-      flexWrap: 'wrap',
-      marginTop: '12px',
-      paddingTop: '12px',
-      borderTop: '1px solid #f3f4f6',
-    },
-    deadline: {
-      fontSize: '13px',
-      color: '#6b7280',
-      fontWeight: '500',
-    },
-    amount: {
-      fontSize: '13px',
-      fontWeight: '700',
-      color: '#10b981',
-    },
-    ctaBtn: {
-      position: 'absolute',
-      bottom: '0',
-      left: '0',
-      right: '0',
-      padding: '12px 24px',
-      backgroundColor: '#2563eb',
-      color: '#fff',
-      border: 'none',
-      fontSize: '13px',
-      fontWeight: '600',
-      cursor: 'pointer',
-      animation: 'slideUp 0.3s ease-out',
-    },
-  ctaContainer: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: '8px',
-    marginTop: '4px',
-    paddingTop: '12px',
-    borderTop: '1px solid #f3f4f6',
-  },
-  ctaBtn: {
-    flex: 1,
-    padding: '8px 12px',
-    backgroundColor: '#064e3b',
-    color: '#fff',
-    border: 'none',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    borderRadius: '8px',
-  },
-  applyBtn: {
-    padding: '8px 12px',
-    backgroundColor: '#f0fdf4',
-    color: '#064e3b',
-    border: '1px solid #6ee7b7',
-    fontSize: '13px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    borderRadius: '8px',
-  },
-  appliedBadge: {
-    padding: '8px 12px',
-    backgroundColor: '#f0fdf4',
-    color: '#064e3b',
-    fontSize: '13px',
-    fontWeight: '600',
-    borderRadius: '8px',
-    border: '1px solid #6ee7b7',
-  },
-
-  }
+      {showModal && (
+        <OpportunityModal
+          opportunity={opportunity}
+          isSaved={isSaved}
+          onToggleSave={onToggleSave}
+          onLogView={onLogView}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
+  )
+}

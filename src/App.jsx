@@ -21,90 +21,55 @@ import AdminArticles from './pages/AdminArticles'
 import { ThemeProvider } from './context/ThemeContext'
 import OpportunityDetail from './pages/OpportunityDetail'
 
-
-
 function App() {
   const { loading } = useAuth()
 
-  if (loading) return <div>Loading...</div>
+  if (loading) return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#0d1117',
+      flexDirection: 'column',
+      gap: '16px',
+    }}>
+      <div style={{
+        width: '32px', height: '32px',
+        border: '2px solid rgba(245,158,11,0.2)',
+        borderTopColor: '#f59e0b',
+        borderRadius: '50%',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <span style={{ fontSize: '13px', color: '#7d8590', fontFamily: 'DM Sans, sans-serif' }}>Loading Verto...</span>
+    </div>
+  )
 
   return (
-  <ThemeProvider>
-    <BrowserRouter>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/onboarding" element={
-          <ProtectedRoute>
-            <Onboarding />
-          </ProtectedRoute>
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
-        <Route path="/saves" element={
-          <ProtectedRoute>
-            <Saves />
-          </ProtectedRoute>
-        } />
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        } />
-        <Route path="/analytics" element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        } />
-        <Route path="/courses" element={
-        <ProtectedRoute>
-          <Courses />
-        </ProtectedRoute>
-      } />
-
-      <Route path="/articles" element={
-        <Articles />
-      } />
-
-      <Route path="/submit-article" element={
-        <ProtectedRoute>
-          <SubmitArticle />
-        </ProtectedRoute>
-      } />
-
-      <Route path="/articles/:id" element={
-        <ArticleDetail />
-      } />
-
-      <Route path="/opportunities/:id" element={
-        <ProtectedRoute>
-          <OpportunityDetail />
-        </ProtectedRoute>
-      } />
-
-      <Route path="/research" element={
-        <Research />
-      } />
-
-      <Route path="/admin/articles" element={
-        <ProtectedRoute>
-          <AdminArticles />
-        </ProtectedRoute>
-      } />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <Admin />
-          </ProtectedRoute>
-        } />
-      </Routes>
-      <MobileNav />
-    </BrowserRouter>
-  </ThemeProvider>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
+          <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+          <Route path="/saves" element={<ProtectedRoute><Saves /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="/analytics" element={<ProtectedRoute><Analytics /></ProtectedRoute>} />
+          <Route path="/courses" element={<ProtectedRoute><Courses /></ProtectedRoute>} />
+          <Route path="/articles" element={<Articles />} />
+          <Route path="/submit-article" element={<ProtectedRoute><SubmitArticle /></ProtectedRoute>} />
+          <Route path="/articles/:id" element={<ArticleDetail />} />
+          <Route path="/opportunities/:id" element={<ProtectedRoute><OpportunityDetail /></ProtectedRoute>} />
+          <Route path="/research" element={<Research />} />
+          <Route path="/admin/articles" element={<ProtectedRoute><AdminArticles /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+        </Routes>
+        <MobileNav />
+      </BrowserRouter>
+    </ThemeProvider>
   )
 }
 

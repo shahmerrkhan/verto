@@ -1,189 +1,129 @@
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
 
 export default function Landing() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState('')
 
   return (
-    <div style={S.page}>
+    <div style={{ minHeight: '100vh', backgroundColor: '#0d1117', fontFamily: "'DM Sans', sans-serif", overflowX: 'hidden' }}>
 
       {/* Nav */}
-      <nav style={S.nav}>
-        <div style={S.navInner}>
-          <div style={S.navLogo}>
+      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, backgroundColor: 'rgba(13,17,23,0.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '0 24px', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <svg width="28" height="28" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
               <rect width="80" height="80" rx="16" fill="#064e3b"/>
               <polygon points="40,12 64,68 52,68 40,40 28,68 16,68" fill="#34d399"/>
               <polygon points="40,12 64,68 58,68 40,26 22,68 16,68" fill="#6ee7b7" opacity="0.4"/>
             </svg>
-            <span style={S.navLogoText}>verto</span>
+            <span style={{ fontSize: '20px', fontWeight: '800', color: '#e6edf3', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>verto</span>
           </div>
-          <div style={S.navActions}>
-            <button style={S.navLogin} onClick={() => navigate('/login')}>Sign in</button>
-            <button style={S.navCta} onClick={() => navigate('/signup')}>Get started</button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button onClick={() => navigate('/login')} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}>
+              Sign in
+            </button>
+            <button onClick={() => navigate('/signup')} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fbbf24'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.transform = 'translateY(0)' }}>
+              Get started
+            </button>
           </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section style={S.hero}>
-        <div style={S.heroInner}>
-          <div style={S.badge}>
-            <span style={S.badgeDot} />
+      <section style={{ maxWidth: '1140px', margin: '0 auto', padding: '130px 24px 80px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }} className="verto-hero">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 14px', borderRadius: '20px', backgroundColor: 'rgba(63,185,80,0.1)', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '700', color: '#3fb950', marginBottom: '28px', width: 'fit-content', letterSpacing: '0.3px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#3fb950', display: 'inline-block' }} />
             Built for Canadian high school students
           </div>
 
-          <h1 style={S.heading}>
+          <h1 style={{ fontSize: 'clamp(36px, 5vw, 56px)', fontWeight: '800', color: '#e6edf3', lineHeight: 1.05, letterSpacing: '-2px', marginBottom: '20px', margin: '0 0 20px 0', fontFamily: "'Syne', sans-serif" }}>
             Every opportunity<br />
-            <span style={S.headingAccent}>you actually qualify for.</span>
+            <span style={{ color: '#f59e0b' }}>you actually qualify for.</span>
           </h1>
 
-          <p style={S.subheading}>
+          <p style={{ fontSize: '16px', color: '#7d8590', lineHeight: 1.7, marginBottom: '36px', margin: '0 0 36px 0', maxWidth: '460px' }}>
             Scholarships, competitions, internships, and programs — ranked by AI to match your grade, province, and interests. No noise. No irrelevant results.
           </p>
 
-          <div style={S.ctaRow}>
-            <button
-              style={S.ctaPrimary}
-              onClick={() => navigate('/signup')}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(6,78,59,0.35)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(6,78,59,0.2)' }}
-            >
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/signup')} style={{ padding: '14px 28px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s ease', letterSpacing: '0.1px' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fbbf24'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(245,158,11,0.3)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
               Find my opportunities →
             </button>
-            <button
-              style={S.ctaSecondary}
-              onClick={() => navigate('/login')}
-              onMouseEnter={e => e.currentTarget.style.backgroundColor = '#f3f4f6'}
-              onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
-            >
+            <button onClick={() => navigate('/login')} style={{ padding: '14px 24px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}>
               Sign in
             </button>
           </div>
-
-          <p style={S.footnote}>Free · No credit card · Takes 2 minutes to set up</p>
+          <p style={{ fontSize: '12px', color: '#484f58', margin: 0 }}>Free · No credit card · Takes 2 minutes to set up</p>
         </div>
 
-        {/* Floating card preview */}
-        <div style={S.previewWrap}>
-          <div style={S.previewCard}>
-            <div style={S.previewCardTop}>
-              <span style={{ ...S.previewBadge, backgroundColor: '#dcfce7', color: '#166534' }}>scholarship</span>
-              <span style={S.previewDeadline}>🔴 3 days left</span>
+        {/* Preview cards */}
+        <div style={{ display: 'flex', flexDirection: 'column', position: 'relative', gap: '0' }}>
+          {[
+            { badge: 'Scholarship', badgeBg: 'rgba(63,185,80,0.1)', badgeColor: '#3fb950', title: 'Loran Scholarship', org: 'Loran Scholars Foundation', amount: '$100,000', deadline: '🔴 3 days left', match: '98%' },
+            { badge: 'Competition', badgeBg: 'rgba(99,102,241,0.1)', badgeColor: '#818cf8', title: 'Canadian Computing Competition', org: 'University of Waterloo', amount: '🏆 National', deadline: '🟡 12 days left', match: '95%' },
+            { badge: 'Internship', badgeBg: 'rgba(245,158,11,0.1)', badgeColor: '#f59e0b', title: 'RBC Summer Tech Labs', org: 'Royal Bank of Canada', amount: '💰 Paid', deadline: '🟢 28 days left', match: '91%' },
+          ].map((card, i) => (
+            <div key={i} style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '14px', padding: '18px 20px', display: 'flex', flexDirection: 'column', gap: '8px', marginTop: i > 0 ? '-10px' : '0', marginLeft: `${i * 20}px`, opacity: 1 - i * 0.12, transform: `scale(${1 - i * 0.03})`, zIndex: 3 - i, boxShadow: '0 8px 32px rgba(0,0,0,0.5)', transition: 'all 0.3s ease' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ padding: '3px 9px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', backgroundColor: card.badgeBg, color: card.badgeColor }}>{card.badge}</span>
+                <span style={{ fontSize: '11px', color: '#484f58', fontWeight: '600' }}>{card.deadline}</span>
+              </div>
+              <p style={{ fontSize: '14px', fontWeight: '700', color: '#e6edf3', margin: 0, fontFamily: "'Syne', sans-serif" }}>{card.title}</p>
+              <p style={{ fontSize: '12px', color: '#7d8590', margin: 0 }}>{card.org}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: '#7d8590' }}>{card.amount}</span>
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', padding: '3px 8px', borderRadius: '6px' }}>{card.match} match</span>
+              </div>
             </div>
-            <p style={S.previewTitle}>Loran Scholarship</p>
-            <p style={S.previewOrg}>Loran Scholars Foundation</p>
-            <div style={S.previewFooter}>
-              <span style={S.previewAmount}>💰 $100,000</span>
-              <span style={S.previewMatch}>98% match</span>
-            </div>
-          </div>
-
-          <div style={{ ...S.previewCard, marginTop: '-12px', marginLeft: '24px', opacity: 0.85, transform: 'scale(0.97)' }}>
-            <div style={S.previewCardTop}>
-              <span style={{ ...S.previewBadge, backgroundColor: '#dbeafe', color: '#1d4ed8' }}>competition</span>
-              <span style={S.previewDeadline}>🟡 12 days left</span>
-            </div>
-            <p style={S.previewTitle}>Canadian Computing Competition</p>
-            <p style={S.previewOrg}>University of Waterloo</p>
-            <div style={S.previewFooter}>
-              <span style={S.previewAmount}>🏆 National recognition</span>
-              <span style={S.previewMatch}>95% match</span>
-            </div>
-          </div>
-
-          <div style={{ ...S.previewCard, marginTop: '-12px', marginLeft: '48px', opacity: 0.6, transform: 'scale(0.94)' }}>
-            <div style={S.previewCardTop}>
-              <span style={{ ...S.previewBadge, backgroundColor: '#fef9c3', color: '#854d0e' }}>internship</span>
-              <span style={S.previewDeadline}>🟢 28 days left</span>
-            </div>
-            <p style={S.previewTitle}>RBC Summer Tech Labs</p>
-            <p style={S.previewOrg}>Royal Bank of Canada</p>
-            <div style={S.previewFooter}>
-              <span style={S.previewAmount}>💰 Paid</span>
-              <span style={S.previewMatch}>91% match</span>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
       {/* Stats bar */}
-      <div style={S.statsBar}>
+      <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: '#161b22', padding: '28px 24px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
         {[
           { value: '400+', label: 'Opportunities listed' },
           { value: 'AI', label: 'Ranked by fit, not recency' },
           { value: '🇨🇦', label: 'Canada-only results' },
           { value: '2 min', label: 'To set up your profile' },
         ].map((s, i) => (
-          <div key={i} style={S.statItem}>
-            <span style={S.statValue}>{s.value}</span>
-            <span style={S.statLabel}>{s.label}</span>
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', padding: '0 40px', borderRight: i < 3 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+            <span style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>{s.value}</span>
+            <span style={{ fontSize: '12px', color: '#484f58', fontWeight: '500' }}>{s.label}</span>
           </div>
         ))}
       </div>
 
       {/* Features */}
-      <section style={S.features}>
-        <div style={S.featuresInner}>
-          <div style={S.sectionLabel}>Why Verto</div>
-          <h2 style={S.sectionTitle}>Built different, on purpose.</h2>
-          <p style={S.sectionSub}>Most opportunity platforms show you everything and let you figure it out. Verto does the work for you.</p>
+      <section style={{ padding: '100px 24px' }}>
+        <div style={{ maxWidth: '1140px', margin: '0 auto' }}>
+          <p style={{ fontSize: '11px', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '16px' }}>Why Verto</p>
+          <h2 style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: '800', color: '#e6edf3', letterSpacing: '-1px', marginBottom: '12px', margin: '0 0 12px 0', fontFamily: "'Syne', sans-serif" }}>Built different, on purpose.</h2>
+          <p style={{ fontSize: '15px', color: '#7d8590', lineHeight: 1.6, marginBottom: '56px', margin: '0 0 56px 0', maxWidth: '520px' }}>Most platforms show you everything and let you figure it out. Verto does the work for you.</p>
 
-          <div style={S.featureGrid}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))', gap: '1px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '16px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.06)' }}>
             {[
-              {
-                icon: '🎯',
-                title: 'AI-matched to you',
-                body: 'Every opportunity is scored based on your grade, province, GPA, interests, and financial need. The best fits float to the top.',
-                color: '#f0fdf4',
-                border: '#bbf7d0',
-              },
-              {
-                icon: '🇨🇦',
-                title: 'Canada-only, always',
-                body: 'No American results cluttering your feed. Every single listing is scoped to Canadian students — filtered by province.',
-                color: '#eff6ff',
-                border: '#bfdbfe',
-              },
-              {
-                icon: '⏰',
-                title: 'Deadline-aware',
-                body: 'Urgent deadlines surface automatically. Get a banner when something you saved is closing in 7 days. Never miss an opportunity again.',
-                color: '#fffbeb',
-                border: '#fde68a',
-              },
-              {
-                icon: '📊',
-                title: 'Track your pipeline',
-                body: 'Mark applications, add private notes, organize into collections, and see your conversion funnel in the analytics dashboard.',
-                color: '#faf5ff',
-                border: '#e9d5ff',
-              },
-              {
-                icon: '📚',
-                title: 'Learn while you apply',
-                body: 'Access curated courses, research papers, and community articles — all written for high school students like you.',
-                color: '#fff7ed',
-                border: '#fed7aa',
-              },
-              {
-                icon: '⚡',
-                title: 'Zero noise',
-                body: 'Filter by type, sort by deadline or value, search by keyword. Clean interface, no clutter. Just opportunities.',
-                color: '#f0fdf4',
-                border: '#bbf7d0',
-              },
+              { icon: '🎯', title: 'AI-matched to you', body: 'Every opportunity is scored based on your grade, province, GPA, interests, and financial need. Best fits float to the top.' },
+              { icon: '🇨🇦', title: 'Canada-only, always', body: 'No American results cluttering your feed. Every listing is scoped to Canadian students — filtered by province.' },
+              { icon: '⏰', title: 'Deadline-aware', body: 'Urgent deadlines surface automatically. Get a banner when something you saved is closing in 7 days.' },
+              { icon: '📊', title: 'Track your pipeline', body: 'Mark applications, add private notes, organize into collections, and see your conversion funnel in analytics.' },
+              { icon: '📚', title: 'Learn while you apply', body: 'Access curated courses, research papers, and community articles — written for high school students like you.' },
+              { icon: '⚡', title: 'Zero noise', body: 'Filter by type, sort by deadline or value, search by keyword. Clean interface, no clutter. Just opportunities.' },
             ].map((f, i) => (
-              <div
-                key={i}
-                style={{ ...S.featureCard, backgroundColor: f.color, borderColor: f.border }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(0,0,0,0.08)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
-              >
-                <div style={S.featureIcon}>{f.icon}</div>
-                <h3 style={S.featureTitle}>{f.title}</h3>
-                <p style={S.featureBody}>{f.body}</p>
+              <div key={i} style={{ padding: '28px', backgroundColor: '#161b22', transition: 'background-color 0.2s ease' }}
+                onMouseEnter={e => e.currentTarget.style.backgroundColor = '#1c2330'}
+                onMouseLeave={e => e.currentTarget.style.backgroundColor = '#161b22'}>
+                <div style={{ fontSize: '24px', marginBottom: '14px' }}>{f.icon}</div>
+                <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#e6edf3', marginBottom: '8px', margin: '0 0 8px 0', fontFamily: "'Syne', sans-serif" }}>{f.title}</h3>
+                <p style={{ fontSize: '13px', color: '#7d8590', lineHeight: 1.65, margin: 0 }}>{f.body}</p>
               </div>
             ))}
           </div>
@@ -191,22 +131,21 @@ export default function Landing() {
       </section>
 
       {/* How it works */}
-      <section style={S.howSection}>
-        <div style={S.howInner}>
-          <div style={S.sectionLabel}>How it works</div>
-          <h2 style={S.sectionTitle}>Up and running in minutes.</h2>
-
-          <div style={S.steps}>
+      <section style={{ backgroundColor: '#161b22', padding: '100px 24px', borderTop: '1px solid rgba(255,255,255,0.06)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <p style={{ fontSize: '11px', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '16px' }}>How it works</p>
+          <h2 style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: '800', color: '#e6edf3', letterSpacing: '-1px', margin: '0 0 56px 0', fontFamily: "'Syne', sans-serif" }}>Up and running in minutes.</h2>
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
             {[
               { num: '01', title: 'Create your profile', body: 'Tell us your grade, province, interests, and GPA. Takes two minutes.' },
               { num: '02', title: 'Get matched instantly', body: 'Our AI ranks every opportunity in the database by how well it fits you.' },
               { num: '03', title: 'Save and track', body: 'Save what interests you, mark your applications, and never lose track.' },
             ].map((step, i) => (
-              <div key={i} style={S.step}>
-                <div style={S.stepNum}>{step.num}</div>
+              <div key={i} style={{ display: 'flex', gap: '32px', alignItems: 'flex-start', padding: '36px 0', borderBottom: i < 2 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#f59e0b', fontFamily: 'monospace', letterSpacing: '1px', minWidth: '28px', paddingTop: '4px' }}>{step.num}</span>
                 <div>
-                  <h3 style={S.stepTitle}>{step.title}</h3>
-                  <p style={S.stepBody}>{step.body}</p>
+                  <h3 style={{ fontSize: '20px', fontWeight: '700', color: '#e6edf3', marginBottom: '8px', margin: '0 0 8px 0', letterSpacing: '-0.3px', fontFamily: "'Syne', sans-serif" }}>{step.title}</h3>
+                  <p style={{ fontSize: '14px', color: '#7d8590', lineHeight: 1.6, margin: 0 }}>{step.body}</p>
                 </div>
               </div>
             ))}
@@ -214,333 +153,43 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA section */}
-      <section style={S.ctaSection}>
-        <div style={S.ctaSectionInner}>
-          <h2 style={S.ctaSectionTitle}>Your next big opportunity is already listed.</h2>
-          <p style={S.ctaSectionSub}>Join students across Canada who use Verto to find scholarships, competitions, and internships that actually fit them.</p>
-          <button
-            style={S.ctaSectionBtn}
-            onClick={() => navigate('/signup')}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(6,78,59,0.35)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(6,78,59,0.2)' }}
-          >
+      {/* CTA */}
+      <section style={{ padding: '120px 24px', textAlign: 'center', backgroundColor: '#0d1117' }}>
+        <div style={{ maxWidth: '560px', margin: '0 auto' }}>
+          <h2 style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: '800', color: '#e6edf3', letterSpacing: '-1px', marginBottom: '16px', margin: '0 0 16px 0', lineHeight: 1.15, fontFamily: "'Syne', sans-serif" }}>Your next big opportunity is already listed.</h2>
+          <p style={{ fontSize: '15px', color: '#7d8590', lineHeight: 1.6, marginBottom: '36px', margin: '0 0 36px 0' }}>Join students across Canada who use Verto to find scholarships, competitions, and internships that actually fit them.</p>
+          <button onClick={() => navigate('/signup')} style={{ padding: '16px 40px', borderRadius: '12px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '15px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s ease', letterSpacing: '0.1px' }}
+            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fbbf24'; e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 12px 32px rgba(245,158,11,0.3)' }}
+            onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}>
             Get started free →
           </button>
-          <p style={{ fontSize: '13px', color: '#9ca3af', marginTop: '16px' }}>No credit card required</p>
+          <p style={{ fontSize: '12px', color: '#484f58', marginTop: '16px' }}>No credit card required</p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer style={S.footer}>
-        <div style={S.footerInner}>
-          <div style={S.footerLogo}>
+      <footer style={{ backgroundColor: '#161b22', padding: '48px 24px 32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ maxWidth: '1140px', margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px', textAlign: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <svg width="22" height="22" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
               <rect width="80" height="80" rx="16" fill="#064e3b"/>
               <polygon points="40,12 64,68 52,68 40,40 28,68 16,68" fill="#34d399"/>
-              <polygon points="40,12 64,68 58,68 40,26 22,68 16,68" fill="#6ee7b7" opacity="0.4"/>
             </svg>
-            <span style={S.footerLogoText}>verto</span>
+            <span style={{ fontSize: '16px', fontWeight: '800', color: '#e6edf3', fontFamily: "'Syne', sans-serif" }}>verto</span>
           </div>
-          <p style={S.footerTagline}>Connecting Canadian students to opportunities that matter.</p>
-          <div style={S.footerLinks}>
+          <p style={{ fontSize: '13px', color: '#484f58', margin: 0, maxWidth: '340px', lineHeight: 1.6 }}>Connecting Canadian students to opportunities that matter.</p>
+          <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', justifyContent: 'center' }}>
             {['Dashboard', 'Saved', 'Analytics', 'Profile', 'Articles', 'Research'].map(link => (
-              <a key={link} href={`/${link.toLowerCase()}`} style={S.footerLink}>{link}</a>
+              <a key={link} href={`/${link.toLowerCase()}`} style={{ fontSize: '12px', color: '#484f58', textDecoration: 'none', fontWeight: '500', padding: '6px 10px', borderRadius: '6px', transition: 'color 0.15s ease' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#f59e0b'}
+                onMouseLeave={e => e.currentTarget.style.color = '#484f58'}>
+                {link}
+              </a>
             ))}
           </div>
-          <p style={S.footerCopy}>© {new Date().getFullYear()} Verto. Built for Canadian high school students.</p>
+          <p style={{ fontSize: '11px', color: '#484f58', margin: 0, opacity: 0.6 }}>© {new Date().getFullYear()} Verto · Built for Canadian high school students</p>
         </div>
       </footer>
-
     </div>
   )
-}
-
-const S = {
-  page: {
-    minHeight: '100vh',
-    backgroundColor: '#fff',
-    fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
-    overflowX: 'hidden',
-  },
-
-  // Nav
-  nav: {
-    position: 'fixed',
-    top: 0, left: 0, right: 0,
-    zIndex: 100,
-    backgroundColor: 'rgba(255,255,255,0.85)',
-    backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid rgba(0,0,0,0.06)',
-  },
-  navInner: {
-    maxWidth: '1140px',
-    margin: '0 auto',
-    padding: '14px 24px',
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  navLogo: { display: 'flex', alignItems: 'center', gap: '10px' },
-  navLogoText: { fontSize: '20px', fontWeight: '700', color: '#064e3b', letterSpacing: '-0.5px' },
-  navActions: { display: 'flex', gap: '8px', alignItems: 'center' },
-  navLogin: { padding: '8px 16px', borderRadius: '10px', border: '1.5px solid #e5e7eb', backgroundColor: 'transparent', color: '#374151', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' },
-  navCta: { padding: '8px 18px', borderRadius: '10px', border: 'none', backgroundColor: '#064e3b', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' },
-
-  // Hero
-  hero: {
-    maxWidth: '1140px',
-    margin: '0 auto',
-    padding: '140px 24px 80px',
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '60px',
-    alignItems: 'center',
-  },
-  heroInner: { display: 'flex', flexDirection: 'column', gap: '0px' },
-  badge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '6px 14px',
-    borderRadius: '20px',
-    backgroundColor: '#f0fdf4',
-    border: '1px solid #bbf7d0',
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#166534',
-    marginBottom: '24px',
-    width: 'fit-content',
-    letterSpacing: '0.2px',
-  },
-  badgeDot: {
-    width: '6px', height: '6px',
-    borderRadius: '50%',
-    backgroundColor: '#16a34a',
-    display: 'inline-block',
-  },
-  heading: {
-    fontSize: '52px',
-    fontWeight: '700',
-    color: '#0a0a0a',
-    lineHeight: 1.1,
-    letterSpacing: '-2px',
-    marginBottom: '20px',
-    margin: '0 0 20px 0',
-  },
-  headingAccent: { color: '#064e3b' },
-  subheading: {
-    fontSize: '17px',
-    color: '#6b7280',
-    lineHeight: 1.7,
-    marginBottom: '36px',
-    margin: '0 0 36px 0',
-    maxWidth: '480px',
-  },
-  ctaRow: { display: 'flex', gap: '12px', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap' },
-  ctaPrimary: {
-    padding: '14px 28px',
-    borderRadius: '12px',
-    border: 'none',
-    backgroundColor: '#064e3b',
-    color: '#fff',
-    fontSize: '15px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 4px 16px rgba(6,78,59,0.2)',
-    letterSpacing: '-0.2px',
-  },
-  ctaSecondary: {
-    padding: '14px 24px',
-    borderRadius: '12px',
-    border: '1.5px solid #e5e7eb',
-    backgroundColor: '#fff',
-    color: '#374151',
-    fontSize: '15px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    transition: 'all 0.2s ease',
-  },
-  footnote: { fontSize: '12px', color: '#9ca3af', margin: '0' },
-
-  // Preview cards
-  previewWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    position: 'relative',
-  },
-  previewCard: {
-    backgroundColor: '#fff',
-    border: '1.5px solid #e5e7eb',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.07)',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '8px',
-    transition: 'all 0.3s ease',
-  },
-  previewCardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  previewBadge: { padding: '3px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '700', textTransform: 'capitalize' },
-  previewDeadline: { fontSize: '11px', fontWeight: '600', color: '#6b7280' },
-  previewTitle: { fontSize: '15px', fontWeight: '700', color: '#111', margin: 0 },
-  previewOrg: { fontSize: '13px', color: '#9ca3af', margin: 0 },
-  previewFooter: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', borderTop: '1px solid #f3f4f6' },
-  previewAmount: { fontSize: '13px', fontWeight: '600', color: '#374151' },
-  previewMatch: { fontSize: '12px', fontWeight: '700', color: '#064e3b', backgroundColor: '#f0fdf4', padding: '3px 8px', borderRadius: '6px' },
-
-  // Stats bar
-  statsBar: {
-    borderTop: '1px solid #f3f4f6',
-    borderBottom: '1px solid #f3f4f6',
-    backgroundColor: '#fafafa',
-    padding: '28px 24px',
-    display: 'flex',
-    justifyContent: 'center',
-    gap: '0px',
-    flexWrap: 'wrap',
-  },
-  statItem: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '0 48px',
-    borderRight: '1px solid #e5e7eb',
-  },
-  statValue: { fontSize: '24px', fontWeight: '700', color: '#111', letterSpacing: '-0.5px' },
-  statLabel: { fontSize: '13px', color: '#9ca3af', fontWeight: '500' },
-
-  // Features
-  features: { padding: '100px 24px' },
-  featuresInner: { maxWidth: '1140px', margin: '0 auto' },
-  sectionLabel: {
-    fontSize: '12px',
-    fontWeight: '700',
-    color: '#064e3b',
-    textTransform: 'uppercase',
-    letterSpacing: '1px',
-    marginBottom: '16px',
-  },
-  sectionTitle: {
-    fontSize: '36px',
-    fontWeight: '700',
-    color: '#0a0a0a',
-    letterSpacing: '-1px',
-    marginBottom: '12px',
-    margin: '0 0 12px 0',
-  },
-  sectionSub: {
-    fontSize: '16px',
-    color: '#6b7280',
-    lineHeight: 1.6,
-    marginBottom: '56px',
-    margin: '0 0 56px 0',
-    maxWidth: '560px',
-  },
-  featureGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))',
-    gap: '20px',
-  },
-  featureCard: {
-    padding: '28px',
-    borderRadius: '16px',
-    border: '1.5px solid transparent',
-    transition: 'all 0.2s ease',
-    cursor: 'default',
-  },
-  featureIcon: { fontSize: '28px', marginBottom: '16px' },
-  featureTitle: { fontSize: '16px', fontWeight: '700', color: '#111', marginBottom: '8px', margin: '0 0 8px 0' },
-  featureBody: { fontSize: '14px', color: '#6b7280', lineHeight: 1.65, margin: 0 },
-
-  // How it works
-  howSection: {
-    backgroundColor: '#0a0a0a',
-    padding: '100px 24px',
-  },
-  howInner: { maxWidth: '860px', margin: '0 auto' },
-  steps: { display: 'flex', flexDirection: 'column', gap: '0px', marginTop: '56px' },
-  step: {
-    display: 'flex',
-    gap: '32px',
-    alignItems: 'flex-start',
-    padding: '36px 0',
-    borderBottom: '1px solid #1f1f1f',
-  },
-  stepNum: {
-    fontSize: '13px',
-    fontWeight: '700',
-    color: '#34d399',
-    fontFamily: 'monospace',
-    letterSpacing: '1px',
-    minWidth: '32px',
-    paddingTop: '3px',
-  },
-  stepTitle: { fontSize: '20px', fontWeight: '700', color: '#fff', marginBottom: '8px', margin: '0 0 8px 0', letterSpacing: '-0.3px' },
-  stepBody: { fontSize: '15px', color: '#6b7280', lineHeight: 1.6, margin: 0 },
-
-  // CTA section
-  ctaSection: {
-    padding: '120px 24px',
-    textAlign: 'center',
-    background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #f0fdf4 100%)',
-    borderTop: '1px solid #d1fae5',
-    borderBottom: '1px solid #d1fae5',
-  },
-  ctaSectionInner: { maxWidth: '600px', margin: '0 auto' },
-  ctaSectionTitle: {
-    fontSize: '36px',
-    fontWeight: '700',
-    color: '#0a0a0a',
-    letterSpacing: '-1px',
-    marginBottom: '16px',
-    margin: '0 0 16px 0',
-    lineHeight: 1.2,
-  },
-  ctaSectionSub: {
-    fontSize: '16px',
-    color: '#6b7280',
-    lineHeight: 1.6,
-    marginBottom: '36px',
-    margin: '0 0 36px 0',
-  },
-  ctaSectionBtn: {
-    padding: '16px 36px',
-    borderRadius: '14px',
-    border: 'none',
-    backgroundColor: '#064e3b',
-    color: '#fff',
-    fontSize: '16px',
-    fontWeight: '700',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    transition: 'all 0.2s ease',
-    boxShadow: '0 4px 16px rgba(6,78,59,0.2)',
-    letterSpacing: '-0.2px',
-  },
-
-  // Footer
-  footer: {
-    backgroundColor: '#0a0a0a',
-    padding: '60px 24px 40px',
-  },
-  footerInner: {
-    maxWidth: '1140px',
-    margin: '0 auto',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '20px',
-    textAlign: 'center',
-  },
-  footerLogo: { display: 'flex', alignItems: 'center', gap: '10px' },
-  footerLogoText: { fontSize: '18px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' },
-  footerTagline: { fontSize: '14px', color: '#6b7280', margin: 0, maxWidth: '360px' },
-  footerLinks: { display: 'flex', gap: '24px', flexWrap: 'wrap', justifyContent: 'center' },
-  footerLink: { fontSize: '13px', color: '#6b7280', textDecoration: 'none', fontWeight: '500', transition: 'color 0.15s ease' },
-  footerCopy: { fontSize: '12px', color: '#374151', margin: 0 },
 }

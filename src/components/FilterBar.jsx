@@ -8,114 +8,39 @@ export default function FilterBar({ onFilterChange, opportunities }) {
 
   function handleSearch(value) {
     setSearchTerm(value)
-    onFilterChange({
-      search: value,
-      type: selectedType,
-    })
+    onFilterChange({ search: value, type: selectedType })
   }
 
   function handleTypeChange(type) {
     setSelectedType(type)
-    onFilterChange({
-      search: searchTerm,
-      type: type,
-    })
+    onFilterChange({ search: searchTerm, type })
   }
 
   return (
-    <div style={styles.container} className="filterBar">
+    <div style={{ marginBottom: '24px', backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
       <input
         type="text"
         placeholder="Search opportunities..."
         value={searchTerm}
         onChange={(e) => handleSearch(e.target.value)}
-        style={styles.searchInput}
+        style={{ width: '100%', padding: '10px 14px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#0d1117', color: '#e6edf3', fontSize: '14px', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', transition: 'border-color 0.2s ease' }}
+        onFocus={e => e.target.style.borderColor = 'rgba(245,158,11,0.4)'}
+        onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'}
       />
-
-      <div style={styles.typeFilter}>
+      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
+        <span style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Type</span>
         {types.map(type => (
-          <button
-            key={type}
-            onClick={() => handleTypeChange(type)}
-            style={{
-              ...styles.typeBtn,
-              backgroundColor: selectedType === type ? '#064e3b' : '#f3f4f6',
-              color: selectedType === type ? '#fff' : '#555',
-              fontWeight: selectedType === type ? '600' : '500',
-            }}
-          >
+          <button key={type} onClick={() => handleTypeChange(type)} style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid', borderColor: selectedType === type ? '#f59e0b' : 'rgba(255,255,255,0.08)', backgroundColor: selectedType === type ? 'rgba(245,158,11,0.1)' : 'transparent', color: selectedType === type ? '#f59e0b' : '#7d8590', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s ease', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
             {type.charAt(0).toUpperCase() + type.slice(1)}
           </button>
         ))}
+        {(searchTerm || selectedType !== 'all') && (
+          <button style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(248,81,73,0.2)', backgroundColor: 'rgba(248,81,73,0.06)', color: '#f85149', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit' }}
+            onClick={() => { setSearchTerm(''); setSelectedType('all'); onFilterChange({ search: '', type: 'all' }) }}>
+            ✕ Clear
+          </button>
+        )}
       </div>
-
-      {(searchTerm || selectedType !== 'all') && (
-  <button
-    style={styles.clearBtn}
-    onClick={() => {
-      setSearchTerm('')
-      setSelectedType('all')
-      onFilterChange({ search: '', type: 'all' })
-    }}
-    onMouseEnter={e => {
-      e.target.style.borderColor = '#064e3b'
-      e.target.style.color = '#064e3b'
-    }}
-    onMouseLeave={e => {
-      e.target.style.borderColor = '#ddd'
-      e.target.style.color = '#666'
-    }}
-  >
-    ✕ Clear filters
-  </button>
-)}
     </div>
   )
-}
-
-const styles = {
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '16px',
-    marginBottom: '32px',
-    padding: '20px',
-    backgroundColor: '#f9f9f9',
-    borderRadius: '12px',
-  },
-  searchInput: {
-    padding: '12px 14px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    boxSizing: 'border-box',
-    width: '100%',
-  },
-  typeFilter: {
-    display: 'flex',
-    gap: '8px',
-    flexWrap: 'wrap',
-  },
-typeBtn: {
-  padding: '8px 14px',
-  borderRadius: '6px',
-  border: 'none',
-  fontSize: '13px',
-  cursor: 'pointer',
-  transition: 'all 0.2s',
-  minHeight: 'auto',
-},
-clearBtn: {
-  alignSelf: 'flex-start',
-  padding: '7px 14px',
-  borderRadius: '8px',
-  border: '1.5px solid #ddd',
-  backgroundColor: '#fff',
-  fontSize: '12px',
-  fontWeight: '500',
-  cursor: 'pointer',
-  color: '#666',
-  transition: 'all 0.2s ease',
-},
 }
