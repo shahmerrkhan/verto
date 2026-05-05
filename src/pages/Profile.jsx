@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import OnboardingProgress from '../components/OnboardingProgress'
+import { BadgeGrid } from '../components/Badges'
+
 
 
 const INTERESTS = [
@@ -147,6 +149,14 @@ export default function Profile() {
           <p style={{ fontSize: '11px', color: '#484f58', marginTop: '12px' }}>{form.interests.length} selected</p>
         </div>
       </div>
+
+      {profile?.badges?.length > 0 && (
+        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#e6edf3', marginBottom: '4px', fontFamily: "'Syne', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}>Badges</h3>
+          <p style={{ fontSize: '12px', color: '#484f58', marginBottom: '16px' }}>{profile.badges.length} earned so far</p>
+          <BadgeGrid unlockedBadges={profile.badges} />
+        </div>
+      )}
 
       <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px' }}>
         <p style={{ fontSize: '12px', color: '#484f58', margin: 0 }}>Changes apply to your next AI match refresh</p>

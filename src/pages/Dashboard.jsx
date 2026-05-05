@@ -13,6 +13,9 @@ import Footer from '../components/Footer'
 import OpportunityOfTheDay from '../components/OpportunityOfTheDay'
 import YouMightHaveMissed from '../components/YouMightHaveMissed'
 import confetti from 'canvas-confetti'
+import { checkNewBadges, BADGE_DEFINITIONS, BadgeUnlockNotification } from '../components/Badges'
+import { calculateMatchScore } from '../lib/opportunityMatcher'
+
 
 
 const QUICK_FILTERS = [
@@ -44,6 +47,7 @@ export default function Dashboard() {
   const [applications, setApplications] = useState([])
   const [activeQuickFilter, setActiveQuickFilter] = useState(null)
   const [currentPage, setCurrentPage] = useState(1)
+  const [pendingBadge, setPendingBadge] = useState(null)
 
   useEffect(() => { if (profile) { fetchOpportunities(); fetchSaves(); fetchApplications() } }, [profile])
   useEffect(() => { applyFilters(opportunities) }, [opportunities, filters, activeQuickFilter])
@@ -51,7 +55,11 @@ export default function Dashboard() {
   async function fetchOpportunities() {
     const { data, error } = await supabase.from('opportunities').select('*').eq('is_active', true)
     if (error) { console.error(error); setLoading(false); return }
-    setOpportunities(profile ? rankOpportunitiesWithAI(data, profile) : data)
+    const ranked = (profile ? rankOpportunitiesWithAI(data, profile) : data).map(op => ({
+      ...op,
+      _matchScore: profile ? calculateMatchScore(op, profile) : null,
+    }))
+    setOpportunities(ranked)
     setLoading(false)
   }
 
@@ -101,32 +109,88 @@ export default function Dashboard() {
   }
 
   async function toggleSave(opportunityId) {
-  const isSaved = saves.includes(opportunityId)
-  if (isSaved) {
-    await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', opportunityId)
-    setSaves(saves.filter(id => id !== opportunityId))
-  } else {
-    await supabase.from('saves').insert({ user_id: user.id, opportunity_id: opportunityId })
-    setSaves([...saves, opportunityId])
-    
-    // Confetti on first ever save
-    const hasConfettied = localStorage.getItem('verto-first-save')
-    if (!hasConfettied) {
-      localStorage.setItem('verto-first-save', 'true')
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        origin: { y: 0.6 },
-        colors: ['#f59e0b', '#fbbf24', '#3fb950', '#818cf8', '#e6edf3'],
+    const isSaved = saves.includes(opportunityId)
+    if (isSaved) {
+      await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', opportunityId)
+      setSaves(saves.filter(id => id !== opportunityId))
+    } else {
+      await supabase.from('saves').insert({
+        user_id: user.id,
+        opportunity_id: opportunityId,
+        saved_at: new Date().toISOString(),
       })
+      const newSaves = [...saves, opportunityId]
+      setSaves(newSaves)
+
+      // First save confetti
+      const hasConfettied = localStorage.getItem('verto-first-save')
+      if (!hasConfettied) {
+        localStorage.setItem('verto-first-save', 'true')
+        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#f59e0b', '#fbbf24', '#3fb950', '#818cf8', '#e6edf3'] })
+      }
+
+      // Badge check
+      const newlyEarned = checkNewBadges({
+        saveCount: newSaves.length,
+        appCount: applications.length,
+        hasAccepted: false,
+        speedDemon: false,
+        currentBadges: profile?.badges || [],
+      })
+      if (newlyEarned.length > 0) {
+        awardBadges(newlyEarned)
+      }
     }
   }
-}
 
   async function trackApplication(opportunityId) {
-    const { error } = await supabase.from('applications').insert([{ user_id: user.id, opportunity_id: opportunityId }]).select()
-    if (error) { setToast({ message: 'Failed to track application', type: 'error' }) }
-    else { setApplications([...applications, opportunityId]); setToast({ message: 'Application tracked!', type: 'success' }) }
+    const { error } = await supabase
+      .from('applications')
+      .insert([{ user_id: user.id, opportunity_id: opportunityId }])
+      .select()
+
+    if (error) {
+      setToast({ message: 'Failed to track application', type: 'error' })
+      return
+    }
+
+    const appliedAt = new Date()
+    await supabase
+      .from('save_metadata')
+      .upsert({ user_id: user.id, opportunity_id: opportunityId, applied_at: appliedAt.toISOString() }, { onConflict: 'user_id,opportunity_id' })
+
+    const newApps = [...applications, opportunityId]
+    setApplications(newApps)
+    setToast({ message: 'Application tracked!', type: 'success' })
+
+    // Check speed demon — did they save this within the last 24hrs?
+    const { data: meta } = await supabase
+      .from('save_metadata')
+      .select('saved_at')
+      .eq('user_id', user.id)
+      .eq('opportunity_id', opportunityId)
+      .single()
+
+    const savedAt = meta?.saved_at ? new Date(meta.saved_at) : null
+    const speedDemon = savedAt ? (appliedAt - savedAt) < 86_400_000 : false
+
+    const newlyEarned = checkNewBadges({
+      saveCount: saves.length,
+      appCount: newApps.length,
+      hasAccepted: false,
+      speedDemon,
+      currentBadges: profile?.badges || [],
+    })
+    if (newlyEarned.length > 0) {
+      awardBadges(newlyEarned)
+    }
+  }
+
+  async function awardBadges(newBadgeIds) {
+    const allBadges = [...new Set([...(profile?.badges || []), ...newBadgeIds])]
+    await supabase.from('profiles').update({ badges: allBadges }).eq('id', user.id)
+    // Show one notification at a time — queue if multiple
+    setPendingBadge(newBadgeIds[0])
   }
 
   async function logView(opportunityId) { await supabase.from('opportunity_views').insert({ user_id: user.id, opportunity_id: opportunityId }) }
@@ -222,6 +286,13 @@ export default function Dashboard() {
             </div>
           )}
         </>
+      )}
+
+      {pendingBadge && (
+        <BadgeUnlockNotification
+          badge={BADGE_DEFINITIONS.find(b => b.id === pendingBadge)}
+          onDismiss={() => setPendingBadge(null)}
+        />
       )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}

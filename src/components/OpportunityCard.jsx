@@ -1,12 +1,15 @@
 import { useState } from 'react'
 import OpportunityModal from './OpportunityModal'
+import MatchScore from './MatchScore'
+
+
 
 export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
   const [showModal, setShowModal] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const { type, title, org_name, description, deadline, amount } = opportunity
   const [copied, setCopied] = useState(false)
-
+  const matchScore = opportunity._matchScore ?? null
 
   const handleViewDetails = () => { onLogView(opportunity.id); setShowModal(true) }
 
@@ -51,9 +54,12 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
         <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
           {/* Top row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', backgroundColor: cfg.bg, color: cfg.color }}>
-              {cfg.label}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+              <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', backgroundColor: cfg.bg, color: cfg.color }}>
+                {cfg.label}
+              </span>
+              {matchScore !== null && <MatchScore score={matchScore} compact />}
+            </div>
             <button onClick={(e) => { e.stopPropagation(); onToggleSave(opportunity.id) }} style={{
               background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer',
               color: isSaved ? '#f59e0b' : '#484f58', transition: 'all 0.2s ease', padding: '2px',

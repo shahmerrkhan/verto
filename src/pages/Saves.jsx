@@ -4,6 +4,9 @@ import { supabase } from '../lib/supabase'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
+import DeadlineCountdown from '../components/DeadlineCountdown'
+import { checkNewBadges, BADGE_DEFINITIONS, BadgeUnlockNotification } from '../components/Badges'
+import Toast from '../components/Toast'
 
 export default function Saves() {
   const { user } = useAuth()
@@ -26,6 +29,8 @@ export default function Saves() {
   const [showMoveModal, setShowMoveModal] = useState(false)
   const [dueSoon, setDueSoon] = useState([])
   const [dismissedBanner, setDismissedBanner] = useState(false)
+  const [pendingBadge, setPendingBadge] = useState(null)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => { if (user) { fetchSavedOpportunities(); fetchCollections() } }, [user])
 
@@ -80,6 +85,13 @@ export default function Saves() {
     if (selectedCollection === id) setSelectedCollection('all')
   }
 
+  async function awardBadgesInSaves(newBadgeIds) {
+    const { data: prof } = await supabase.from('profiles').select('badges').eq('id', user.id).single()
+    const allBadges = [...new Set([...(prof?.badges || []), ...newBadgeIds])]
+    await supabase.from('profiles').update({ badges: allBadges }).eq('id', user.id)
+    setPendingBadge(newBadgeIds[0])
+  }
+
   async function moveToCollection(oppId, collId) {
     if (!collId) return
     const { error } = await supabase.from('opportunity_collections').insert({ user_id: user.id, opportunity_id: oppId, collection_id: collId })
@@ -104,6 +116,19 @@ export default function Saves() {
     if (existing) await supabase.from('save_metadata').update(payload).eq('id', existing.id)
     else await supabase.from('save_metadata').insert({ user_id: user.id, opportunity_id: oppId, ...payload })
     setMetadata({ ...metadata, [oppId]: { ...(metadata[oppId] || {}), ...payload } })
+
+    if (status === 'accepted') {
+      fireConfetti()
+      const { data: prof } = await supabase.from('profiles').select('badges').eq('id', user.id).single()
+      const newlyEarned = checkNewBadges({
+        saveCount: savedOpportunities.length,
+        appCount: Object.values(metadata).filter(m => m.application_status).length + 1,
+        hasAccepted: true,
+        speedDemon: false,
+        currentBadges: prof?.badges || [],
+      })
+      if (newlyEarned.length > 0) awardBadgesInSaves(newlyEarned)
+    }
   }
 
   async function toggleArchive(oppId) {
@@ -362,7 +387,11 @@ export default function Saves() {
                     {/* Card top bar */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', backgroundColor: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                       <input type="checkbox" checked={selectedOpportunities.has(op.id)} onChange={() => toggleSelectOpportunity(op.id)} style={{ accentColor: '#f59e0b', cursor: 'pointer' }} />
-                      <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '700', backgroundColor: status.color + '18', color: status.color, border: `1px solid ${status.color}30` }}>{status.label}</span>
+                      <DeadlineCountdown
+                        deadline={op.deadline}
+                        showToastOnDeadlineDay
+                        onDeadlineToday={() => setToast({ message: `⏰ "${op.title}" is due today!`, type: 'error' })}
+                      />
                       {appStatus && (
                         <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '600', backgroundColor: statusConfig[appStatus]?.bg, color: statusConfig[appStatus]?.color, border: `1px solid ${statusConfig[appStatus]?.border}` }}>
                           {statusConfig[appStatus]?.icon} {statusConfig[appStatus]?.label}
@@ -439,6 +468,15 @@ export default function Saves() {
           )}
         </>
       )}
+
+      {pendingBadge && (
+        <BadgeUnlockNotification
+          badge={BADGE_DEFINITIONS.find(b => b.id === pendingBadge)}
+          onDismiss={() => setPendingBadge(null)}
+        />
+      )}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        
       <Footer />
     </div>
   )
