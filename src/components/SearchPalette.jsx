@@ -9,6 +9,9 @@ export default function SearchPalette({ onClose }) {
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef(null)
   const navigate = useNavigate()
+  const [searchHistory, setSearchHistory] = useState(() => {
+  try { return JSON.parse(localStorage.getItem('verto-search-history') || '[]') } catch { return [] }
+    })
 
   useEffect(() => {
     inputRef.current?.focus()
@@ -24,7 +27,7 @@ export default function SearchPalette({ onClose }) {
       setResults({ opportunities: [], courses: [], articles: [], research: [] })
       return
     }
-    const timer = setTimeout(() => search(query.trim()), 200)
+    const timer = setTimeout(() => { saveToHistory(query.trim()); search(query.trim()) }, 200)    
     return () => clearTimeout(timer)
   }, [query])
 
@@ -63,6 +66,12 @@ export default function SearchPalette({ onClose }) {
     const icons = { scholarship: '🎓', competition: '🏆', internship: '💼', program: '📋', grant: '💰' }
     return icons[type] || '◎'
   }
+ 
+  function saveToHistory(term) {
+  const updated = [term, ...searchHistory.filter(h => h !== term)].slice(0, 5)
+  setSearchHistory(updated)
+  localStorage.setItem('verto-search-history', JSON.stringify(updated))
+    }
 
   function handleSelect(result) {
     navigate(result.path)
@@ -124,17 +133,37 @@ export default function SearchPalette({ onClose }) {
         {/* Results */}
         <div style={{ maxHeight: '460px', overflowY: 'auto' }}>
           {!query.trim() && (
-            <div style={{ padding: '32px 20px', textAlign: 'center' }}>
-              <p style={{ fontSize: '13px', color: '#484f58', margin: 0 }}>Start typing to search across everything</p>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', marginTop: '16px', flexWrap: 'wrap' }}>
-                {['Scholarship', 'Waterloo', 'Python', 'Machine Learning'].map(hint => (
-                  <button key={hint} onClick={() => setQuery(hint)} style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', color: '#7d8590', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: '500' }}>
-                    {hint}
-                  </button>
+            <div style={{ padding: '16px 20px' }}>
+            {searchHistory.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                    <p style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>Recent</p>
+                    <button onClick={() => { setSearchHistory([]); localStorage.removeItem('verto-search-history') }}
+                    style={{ background: 'none', border: 'none', color: '#484f58', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    Clear
+                    </button>
+                </div>
+                {searchHistory.map((h, i) => (
+                    <button key={i} onClick={() => setQuery(h)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 10px', background: 'none', border: 'none', borderRadius: '8px', cursor: 'pointer', textAlign: 'left', color: '#7d8590', fontSize: '13px', fontFamily: 'inherit', transition: 'background 0.1s' }}
+                    onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(255,255,255,0.04)'}
+                    onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <span style={{ color: '#484f58', fontSize: '13px' }}>↺</span> {h}
+                    </button>
                 ))}
-              </div>
+                </div>
+            )}
+            <p style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 10px' }}>Try searching</p>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {['Scholarship', 'Waterloo', 'Python', 'Machine Learning'].map(hint => (
+                <button key={hint} onClick={() => setQuery(hint)}
+                    style={{ padding: '5px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', color: '#7d8590', fontSize: '12px', cursor: 'pointer', fontFamily: 'inherit', fontWeight: '500' }}>
+                    {hint}
+                </button>
+                ))}
             </div>
-          )}
+            </div>
+            )}
 
           {isEmpty && (
             <div style={{ padding: '40px 20px', textAlign: 'center' }}>

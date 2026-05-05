@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import OnboardingProgress from '../components/OnboardingProgress'
+
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -87,10 +89,10 @@ export default function Profile() {
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', marginBottom: '6px', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Your profile</h1>
         <p style={{ fontSize: '14px', color: '#7d8590' }}>Update your info to get better matched opportunities</p>
+        <OnboardingProgress currentStep={1} totalSteps={1} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: '20px', marginBottom: '24px' }}>
-
         {/* Basic info */}
         <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '24px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#e6edf3', marginBottom: '20px', fontFamily: "'Syne', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}>Basic info</h3>

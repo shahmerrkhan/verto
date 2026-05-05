@@ -10,6 +10,10 @@ import SortBar from '../components/SortBar'
 import RecommendedSection from '../components/RecommendedSection'
 import ProfileCompletion from '../components/ProfileCompletion'
 import Footer from '../components/Footer'
+import OpportunityOfTheDay from '../components/OpportunityOfTheDay'
+import YouMightHaveMissed from '../components/YouMightHaveMissed'
+import confetti from 'canvas-confetti'
+
 
 const QUICK_FILTERS = [
   { label: '💰 High value', id: 'highValue', filter: (op) => (op.amount || 0) >= 5000 },
@@ -97,17 +101,27 @@ export default function Dashboard() {
   }
 
   async function toggleSave(opportunityId) {
-    const isSaved = saves.includes(opportunityId)
-    if (isSaved) {
-      await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', opportunityId)
-      setSaves(saves.filter(id => id !== opportunityId))
-      setToast({ message: 'Removed from saved', type: 'success' })
-    } else {
-      await supabase.from('saves').insert({ user_id: user.id, opportunity_id: opportunityId })
-      setSaves([...saves, opportunityId])
-      setToast({ message: 'Added to saved', type: 'success' })
+  const isSaved = saves.includes(opportunityId)
+  if (isSaved) {
+    await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', opportunityId)
+    setSaves(saves.filter(id => id !== opportunityId))
+  } else {
+    await supabase.from('saves').insert({ user_id: user.id, opportunity_id: opportunityId })
+    setSaves([...saves, opportunityId])
+    
+    // Confetti on first ever save
+    const hasConfettied = localStorage.getItem('verto-first-save')
+    if (!hasConfettied) {
+      localStorage.setItem('verto-first-save', 'true')
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.6 },
+        colors: ['#f59e0b', '#fbbf24', '#3fb950', '#818cf8', '#e6edf3'],
+      })
     }
   }
+}
 
   async function trackApplication(opportunityId) {
     const { error } = await supabase.from('applications').insert([{ user_id: user.id, opportunity_id: opportunityId }]).select()
@@ -142,6 +156,8 @@ export default function Dashboard() {
 
       <ProfileCompletion profile={profile} />
 
+      <OpportunityOfTheDay />
+      
       {/* Quick filters */}
       <div style={{ marginBottom: '20px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Quick</span>
@@ -155,6 +171,8 @@ export default function Dashboard() {
       {opportunities.length > 0 && (
         <RecommendedSection opportunities={opportunities} topN={3} saves={saves} applications={applications} onToggleSave={toggleSave} onLogView={logView} onTrackApplication={trackApplication} />
       )}
+
+      <YouMightHaveMissed />
 
       <FilterBar onFilterChange={setFilters} opportunities={opportunities} />
 

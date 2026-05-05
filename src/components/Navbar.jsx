@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabase'
 import Logo from './Logo'
 import SearchPalette from './SearchPalette'
+import { getAvatarColor, getInitials } from '../utils/avatarColor'
 
 export default function Navbar() {
   const navigate = useNavigate()
@@ -162,7 +163,6 @@ export default function Navbar() {
         boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.4)' : 'none',
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-
           {/* Logo */}
           <div style={{ minWidth: 'fit-content', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
             <Logo theme={theme} currentTheme={currentTheme} />
@@ -243,31 +243,16 @@ export default function Navbar() {
             </div>
 
             {/* Profile */}
-            <div style={{ position: 'relative' }} ref={profileRef}>
-              <button onClick={() => setProfileDropdownOpen(!profileDropdownOpen)} style={{ padding: '7px 13px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', gap: '7px', cursor: 'pointer', fontSize: '13px', fontWeight: '600', transition: 'all 0.15s ease', fontFamily: 'inherit', backgroundColor: 'rgba(255,255,255,0.04)', color: '#e6edf3' }}>
-                <span style={{ width: '22px', height: '22px', borderRadius: '50%', backgroundColor: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', color: '#0d1117' }}>
-                  {(profile?.full_name?.charAt(0) || 'U').toUpperCase()}
-                </span>
-                <span>{profile?.full_name?.split(' ')[0] || 'Account'}</span>
-                <span style={{ fontSize: '9px', color: '#7d8590' }}>▼</span>
-              </button>
-              {profileDropdownOpen && (
-                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: '200px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#161b22', boxShadow: '0 20px 48px rgba(0,0,0,0.6)', zIndex: 2000, overflow: 'hidden', animation: 'slideDown 0.2s ease' }}>
-                  <div style={{ padding: '12px 14px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                    <p style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: '#e6edf3' }}>{profile?.full_name || 'Account'}</p>
-                    <p style={{ margin: '2px 0 0', fontSize: '11px', color: '#7d8590' }}>Student</p>
-                  </div>
-                  {[{ label: '○  Profile', path: '/profile' }, { label: '▲  Analytics', path: '/analytics' }].map(item => (
-                    <button key={item.path} className="dropdown-item" onClick={() => { navigate(item.path); setProfileDropdownOpen(false) }} style={{ width: '100%', padding: '11px 14px', border: 'none', cursor: 'pointer', fontSize: '13px', fontWeight: '500', textAlign: 'left', transition: 'background 0.15s', fontFamily: 'inherit', color: '#e6edf3', background: 'none' }}>
-                      {item.label}
-                    </button>
-                  ))}
-                  <button onClick={handleLogout} style={{ width: '100%', padding: '11px 14px', border: 'none', borderTop: '1px solid rgba(255,255,255,0.06)', cursor: 'pointer', fontSize: '13px', fontWeight: '600', textAlign: 'left', fontFamily: 'inherit', color: '#f85149', background: 'none', transition: 'background 0.15s' }}>
-                    Sign out
-                  </button>
+            {(() => {
+              const name = profile?.full_name || user?.email || ''
+              const { bg, text } = getAvatarColor(name)
+              const initials = getInitials(name)
+              return (
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: bg, color: text, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '800', fontFamily: "'Syne', sans-serif", flexShrink: 0, letterSpacing: '0.3px' }}>
+                  {initials}
                 </div>
-              )}
-            </div>
+              )
+            })()}
           </div>
 
           {/* Mobile hamburger */}

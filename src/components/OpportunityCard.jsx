@@ -5,6 +5,8 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
   const [showModal, setShowModal] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const { type, title, org_name, description, deadline, amount } = opportunity
+  const [copied, setCopied] = useState(false)
+
 
   const handleViewDetails = () => { onLogView(opportunity.id); setShowModal(true) }
 
@@ -96,6 +98,17 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
                   ✓ Applied
                 </span>
               )}
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation()
+                  const url = `${window.location.origin}/opportunities/${opportunity.id}`
+                  await navigator.clipboard.writeText(url)
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 2000)
+                }}
+                style={{ padding: '9px 12px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: copied ? 'rgba(63,185,80,0.1)' : 'transparent', color: copied ? '#3fb950' : '#7d8590', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap' }}>
+                {copied ? '✓ Copied' : '⎘ Share'}
+              </button>
             </div>
           )}
         </div>

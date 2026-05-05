@@ -419,9 +419,17 @@ export default function Saves() {
 
                     {/* Note textarea */}
                     {expandedNotes === op.id && (
-                      <div style={{ padding: '10px', borderTop: '1px solid rgba(245,158,11,0.1)', backgroundColor: 'rgba(245,158,11,0.03)' }}>
-                        <textarea placeholder="Add a private note about this opportunity..." value={meta.notes || ''} onChange={e => updateNote(op.id, e.target.value)}
-                          style={{ width: '100%', minHeight: '72px', padding: '8px 10px', borderRadius: '7px', border: '1px solid rgba(245,158,11,0.15)', backgroundColor: 'rgba(13,17,23,0.6)', color: '#e6edf3', fontSize: '12px', fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+                      <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
+                        <textarea
+                          autoFocus
+                          placeholder="Add private notes about this opportunity..."
+                          value={meta.notes || ''}
+                          onChange={(e) => updateNote(op.id, e.target.value)}
+                          style={{ width: '100%', minHeight: '80px', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: '#0d1117', color: '#e6edf3', fontSize: '12px', fontFamily: 'inherit', outline: 'none', resize: 'vertical' }}
+                        />
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '8px' }}>
+                          <button onClick={() => setExpandedNotes(null)} style={{ padding: '4px 10px', borderRadius: '6px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '11px', fontWeight: '700', cursor: 'pointer' }}>Done</button>
+                        </div>
                       </div>
                     )}
                   </div>
