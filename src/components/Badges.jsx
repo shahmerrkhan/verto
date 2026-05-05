@@ -149,43 +149,55 @@ export function BadgeUnlockNotification({ badge, onDismiss }) {
 /**
  * Grid of all badges. Pass unlockedBadges as string[].
  */
-export function BadgeGrid({ unlockedBadges = [] }) {
+export function BadgeGrid({ unlockedBadges = [], saveCount = 0, appCount = 0 }) {
+  const progress = {
+    first_save:  { current: Math.min(saveCount, 1),  max: 1,  label: 'saves' },
+    collector:   { current: Math.min(saveCount, 5),  max: 5,  label: 'saves' },
+    explorer:    { current: Math.min(saveCount, 10), max: 10, label: 'saves' },
+    applied:     { current: Math.min(appCount, 1),   max: 1,  label: 'apps' },
+    applicant:   { current: Math.min(appCount, 5),   max: 5,  label: 'apps' },
+    winner:      null,
+    speed_demon: null,
+  }
+
   return (
-    <div
-      style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
-        gap: '10px',
-      }}
-    >
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '10px' }}>
       {BADGE_DEFINITIONS.map(badge => {
         const earned = unlockedBadges.includes(badge.id)
+        const prog = progress[badge.id]
+
         return (
           <div
             key={badge.id}
             title={badge.description}
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '16px 12px',
-              borderRadius: '12px',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
+              padding: '16px 12px', borderRadius: '12px',
               backgroundColor: earned ? badge.bg : 'rgba(255,255,255,0.02)',
               border: `1px solid ${earned ? badge.border : 'rgba(255,255,255,0.06)'}`,
               transition: 'all 0.2s ease',
-              opacity: earned ? 1 : 0.4,
-              filter: earned ? 'none' : 'grayscale(1)',
+              opacity: earned ? 1 : 0.5,
+              filter: earned ? 'none' : 'grayscale(0.8)',
             }}
           >
             <span style={{ fontSize: '26px', lineHeight: 1 }}>{badge.emoji}</span>
-            <div style={{ textAlign: 'center' }}>
+            <div style={{ textAlign: 'center', width: '100%' }}>
               <p style={{ margin: '0 0 2px', fontSize: '12px', fontWeight: '700', color: earned ? badge.color : '#484f58' }}>
                 {badge.label}
               </p>
-              <p style={{ margin: 0, fontSize: '10px', color: '#484f58', lineHeight: 1.4 }}>
+              <p style={{ margin: '0 0 6px', fontSize: '10px', color: '#484f58', lineHeight: 1.4 }}>
                 {badge.description}
               </p>
+              {!earned && prog && (
+                <>
+                  <div style={{ height: '3px', borderRadius: '99px', backgroundColor: 'rgba(255,255,255,0.06)', overflow: 'hidden', marginBottom: '3px' }}>
+                    <div style={{ height: '100%', width: `${(prog.current / prog.max) * 100}%`, borderRadius: '99px', backgroundColor: badge.color, transition: 'width 0.4s ease' }} />
+                  </div>
+                  <p style={{ margin: 0, fontSize: '9px', color: '#484f58', fontWeight: '600' }}>
+                    {prog.current}/{prog.max} {prog.label}
+                  </p>
+                </>
+              )}
             </div>
           </div>
         )

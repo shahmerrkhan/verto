@@ -1,12 +1,16 @@
-import { useState } from 'react'
-import OpportunityModal from './OpportunityModal'
+import { useState, useEffect, useRef } from 'react'
+import { supabase } from '../lib/supabase'
+import MatchScore from './MatchScore'
 
-export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
-  const [showModal, setShowModal] = useState(false)
-  const [isHovering, setIsHovering] = useState(false)
-  const { type, title, org_name, description, deadline, amount } = opportunity
+export default function OpportunityModal({ opportunity, isSaved, onToggleSave, onLogView, onClose }) {
+  const [similarOpps, setSimilarOpps] = useState([])
+  const [copied, setCopied] = useState(false)
+  const overlayRef = useRef(null)
 
-  const handleViewDetails = () => { onLogView(opportunity.id); setShowModal(true) }
+  const {
+    id, type, title, org_name, description, deadline, amount,
+    location, requires_essay, url, created_at, _matchScore
+  } = opportunity
 
   const typeConfig = {
     scholarship: { bg: 'rgba(63,185,80,0.12)', color: '#3fb950', label: 'Scholarship' },
@@ -17,99 +21,313 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
   }
   const cfg = typeConfig[type] || { bg: 'rgba(125,133,144,0.12)', color: '#7d8590', label: type }
 
+  const daysLeft = deadline
+    ? Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24))
+    : null
+
+  const deadlineColor = daysLeft === null ? '#484f58'
+    : daysLeft < 0 ? '#484f58'
+    : daysLeft <= 3 ? '#f85149'
+    : daysLeft <= 7 ? '#f59e0b'
+    : '#3fb950'
+
+  useEffect(() => {
+    function handleKey(e) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', handleKey)
+    return () => window.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = '' }
+  }, [])
+
+  useEffect(() => {
+    async function fetchSimilar() {
+      const { data } = await supabase
+        .from('opportunities')
+        .select('*')
+        .eq('is_active', true)
+        .eq('type', type)
+        .neq('id', id)
+        .limit(3)
+      setSimilarOpps(data || [])
+    }
+    fetchSimilar()
+  }, [id, type])
+
+  function handleOverlayClick(e) {
+    if (e.target === overlayRef.current) onClose()
+  }
+
+  async function handleCopy() {
+    const shareUrl = `${window.location.origin}/opportunities/${id}`
+    await navigator.clipboard.writeText(shareUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   return (
-    <>
-      <div className="v-card" style={{
-        backgroundColor: '#161b22',
-        border: deadlineUrgency === 'urgent'
-          ? '1.5px solid rgba(248,81,73,0.4)'
-          : '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '14px',
-        padding: '0',
-        display: 'flex', flexDirection: 'column',
-        cursor: 'pointer', overflow: 'hidden',
-        position: 'relative',
+    <div
+      ref={overlayRef}
+      onClick={handleOverlayClick}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 5000,
+        backgroundColor: 'rgba(0,0,0,0.7)',
+        backdropFilter: 'blur(6px)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '20px',
+        animation: 'fadeIn 0.15s ease',
+        fontFamily: 'DM Sans, sans-serif',
       }}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-        onClick={handleViewDetails}
+    >
+      <style>{`
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-scroll::-webkit-scrollbar { width: 4px; }
+        .modal-scroll::-webkit-scrollbar-track { background: transparent; }
+        .modal-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 99px; }
+        .sim-card:hover { border-color: rgba(245,158,11,0.3) !important; background: rgba(245,158,11,0.04) !important; }
+      `}</style>
+
+      <div
+        className="modal-scroll"
+        style={{
+          backgroundColor: '#161b22',
+          border: '1px solid rgba(255,255,255,0.09)',
+          borderRadius: '18px',
+          width: '100%',
+          maxWidth: '620px',
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          boxShadow: '0 32px 80px rgba(0,0,0,0.7)',
+          animation: 'slideUp 0.2s cubic-bezier(0.22,1,0.36,1)',
+        }}
       >
-        {/* Urgency banner */}
-        {(deadlineUrgency === 'urgent' || deadlineUrgency === 'soon') && (
-          <div style={{
-            padding: '7px 16px', fontSize: '11px', fontWeight: '700', letterSpacing: '0.3px',
-            backgroundColor: deadlineUrgency === 'urgent' ? 'rgba(248,81,73,0.12)' : 'rgba(245,158,11,0.10)',
-            color: deadlineUrgency === 'urgent' ? '#f85149' : '#f59e0b',
-            borderBottom: deadlineUrgency === 'urgent' ? '1px solid rgba(248,81,73,0.2)' : '1px solid rgba(245,158,11,0.15)',
-          }}>
-            {deadlineUrgency === 'urgent' ? '● Closing very soon' : '● Deadline this week'}
+        {/* Header */}
+        <div style={{
+          padding: '24px 24px 20px',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          position: 'sticky', top: 0,
+          backgroundColor: '#161b22',
+          zIndex: 1,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <span style={{
+                padding: '4px 10px', borderRadius: '6px', fontSize: '10px',
+                fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px',
+                backgroundColor: cfg.bg, color: cfg.color,
+              }}>
+                {cfg.label}
+              </span>
+              {_matchScore !== null && _matchScore !== undefined && (
+                <MatchScore score={_matchScore} compact />
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              style={{
+                background: 'none', border: '1px solid rgba(255,255,255,0.08)',
+                borderRadius: '8px', width: '32px', height: '32px',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: 'pointer', color: '#7d8590', fontSize: '16px',
+                flexShrink: 0, transition: 'all 0.15s',
+              }}
+            >✕</button>
+          </div>
+
+          <h2 style={{
+            fontSize: '20px', fontWeight: '800', color: '#e6edf3',
+            margin: '14px 0 4px', lineHeight: 1.3,
+            fontFamily: "'Syne', sans-serif",
+          }}>{title}</h2>
+          <p style={{ fontSize: '13px', color: '#7d8590', margin: 0, fontWeight: '500' }}>{org_name}</p>
+        </div>
+
+        {/* Match score bar (full version) */}
+        {_matchScore !== null && _matchScore !== undefined && (
+          <div style={{ padding: '16px 24px 0' }}>
+            <MatchScore score={_matchScore} compact={false} />
           </div>
         )}
 
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-          {/* Top row */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', backgroundColor: cfg.bg, color: cfg.color }}>
-              {cfg.label}
-            </span>
-            <button onClick={(e) => { e.stopPropagation(); onToggleSave(opportunity.id) }} style={{
-              background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer',
-              color: isSaved ? '#f59e0b' : '#484f58', transition: 'all 0.2s ease', padding: '2px',
-              transform: isHovering ? 'scale(1.15)' : 'scale(1)',
-            }}>
-              {isSaved ? '★' : '☆'}
-            </button>
-          </div>
+        {/* Body */}
+        <div style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
-          <h3 style={{ fontSize: '15px', fontWeight: '700', color: '#e6edf3', margin: 0, lineHeight: 1.35, fontFamily: "'Syne', sans-serif" }}>{title}</h3>
-          <p style={{ fontSize: '12px', color: '#7d8590', fontWeight: '500', margin: 0 }}>{org_name}</p>
-          <p style={{ fontSize: '13px', color: '#7d8590', lineHeight: 1.6, margin: 0, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 }}>{description}</p>
-
-          {/* Footer */}
-          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', marginTop: 'auto' }}>
+          {/* Meta pills */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {deadline && (
-              <span style={{ fontSize: '12px', fontWeight: '600', color: deadlineUrgency === 'urgent' ? '#f85149' : deadlineUrgency === 'soon' ? '#f59e0b' : '#484f58' }}>
-                📅 {new Date(deadline).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
+              <span style={{
+                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                backgroundColor: `${deadlineColor}18`, color: deadlineColor,
+                border: `1px solid ${deadlineColor}30`,
+              }}>
+                📅 {daysLeft !== null && daysLeft >= 0
+                  ? `${new Date(deadline).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })} · ${daysLeft === 0 ? 'Due today' : `${daysLeft}d left`}`
+                  : daysLeft < 0 ? 'Closed' : new Date(deadline).toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
               </span>
             )}
             {amount > 0 && (
-              <span style={{ fontSize: '12px', fontWeight: '700', color: '#3fb950' }}>
+              <span style={{
+                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700',
+                backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950',
+                border: '1px solid rgba(63,185,80,0.2)',
+              }}>
                 💰 {amount === 1 ? 'Varies' : `$${amount.toLocaleString()}`}
+              </span>
+            )}
+            {location && (
+              <span style={{
+                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                backgroundColor: 'rgba(255,255,255,0.04)', color: '#7d8590',
+                border: '1px solid rgba(255,255,255,0.07)',
+              }}>
+                📍 {location}
+              </span>
+            )}
+            {requires_essay === false && (
+              <span style={{
+                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                backgroundColor: 'rgba(129,140,248,0.1)', color: '#818cf8',
+                border: '1px solid rgba(129,140,248,0.2)',
+              }}>
+                ⭐ No essay
+              </span>
+            )}
+            {created_at && Math.ceil((new Date() - new Date(created_at)) / (1000 * 60 * 60 * 24)) <= 7 && (
+              <span style={{
+                padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '600',
+                backgroundColor: 'rgba(245,158,11,0.08)', color: '#f59e0b',
+                border: '1px solid rgba(245,158,11,0.15)',
+              }}>
+                🆕 Just added
               </span>
             )}
           </div>
 
-          {/* Hover CTA */}
-          {isHovering && (
-            <div style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', animation: 'slideUp 0.2s ease' }}>
-              <button style={{ flex: 1, padding: '9px 12px', backgroundColor: '#f59e0b', color: '#0d1117', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', letterSpacing: '0.2px' }}
-                onClick={(e) => { e.stopPropagation(); handleViewDetails() }}>
-                View details →
-              </button>
-              {!isApplied ? (
-                <button style={{ padding: '9px 12px', backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                  onClick={(e) => { e.stopPropagation(); onTrackApplication(opportunity.id) }}>
-                  Mark applied
-                </button>
-              ) : (
-                <span style={{ padding: '9px 12px', backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '600', borderRadius: '8px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
-                  ✓ Applied
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
+          {/* Description */}
+          <div>
+            <p style={{
+              fontSize: '10px', fontWeight: '700', color: '#484f58',
+              textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 10px',
+            }}>About</p>
+            <p style={{
+              fontSize: '14px', color: '#c9d1d9', lineHeight: 1.7, margin: 0,
+            }}>{description}</p>
+          </div>
 
-      {showModal && (
-        <OpportunityModal
-          opportunity={opportunity}
-          isSaved={isSaved}
-          onToggleSave={onToggleSave}
-          onLogView={onLogView}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-    </>
+          {/* Action buttons */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {url && (
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1, minWidth: '120px',
+                  padding: '11px 20px', borderRadius: '10px',
+                  backgroundColor: '#f59e0b', color: '#0d1117',
+                  fontSize: '13px', fontWeight: '700',
+                  textDecoration: 'none', textAlign: 'center',
+                  display: 'inline-block', transition: 'opacity 0.15s',
+                  fontFamily: 'inherit',
+                }}
+                onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
+                onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+              >
+                Apply now →
+              </a>
+            )}
+            <button
+              onClick={() => onToggleSave(id)}
+              style={{
+                padding: '11px 18px', borderRadius: '10px',
+                border: isSaved ? '1px solid rgba(245,158,11,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                backgroundColor: isSaved ? 'rgba(245,158,11,0.1)' : 'transparent',
+                color: isSaved ? '#f59e0b' : '#7d8590',
+                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap',
+              }}
+            >
+              {isSaved ? '★ Saved' : '☆ Save'}
+            </button>
+            <button
+              onClick={handleCopy}
+              style={{
+                padding: '11px 18px', borderRadius: '10px',
+                border: '1px solid rgba(255,255,255,0.08)',
+                backgroundColor: copied ? 'rgba(63,185,80,0.1)' : 'transparent',
+                color: copied ? '#3fb950' : '#7d8590',
+                fontSize: '13px', fontWeight: '600', cursor: 'pointer',
+                fontFamily: 'inherit', transition: 'all 0.15s', whiteSpace: 'nowrap',
+              }}
+            >
+              {copied ? '✓ Copied' : '⎘ Share'}
+            </button>
+          </div>
+        </div>
+
+        {/* Similar opportunities */}
+        {similarOpps.length > 0 && (
+          <div style={{
+            padding: '20px 24px 24px',
+            borderTop: '1px solid rgba(255,255,255,0.06)',
+          }}>
+            <p style={{
+              fontSize: '10px', fontWeight: '700', color: '#484f58',
+              textTransform: 'uppercase', letterSpacing: '0.8px', margin: '0 0 12px',
+            }}>Similar opportunities</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {similarOpps.map(op => {
+                const simDays = op.deadline
+                  ? Math.ceil((new Date(op.deadline) - new Date()) / (1000 * 60 * 60 * 24))
+                  : null
+                const simColor = simDays === null ? '#484f58' : simDays <= 3 ? '#f85149' : simDays <= 7 ? '#f59e0b' : '#484f58'
+                return (
+                  <div
+                    key={op.id}
+                    className="sim-card"
+                    onClick={() => {
+                      onLogView(op.id)
+                      onClose()
+                    }}
+                    style={{
+                      padding: '12px 14px', borderRadius: '10px',
+                      border: '1px solid rgba(255,255,255,0.06)',
+                      backgroundColor: 'rgba(255,255,255,0.02)',
+                      cursor: 'pointer', transition: 'all 0.15s',
+                      display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px',
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{
+                        margin: '0 0 3px', fontSize: '13px', fontWeight: '600',
+                        color: '#e6edf3', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}>{op.title}</p>
+                      <p style={{ margin: 0, fontSize: '11px', color: '#7d8590' }}>{op.org_name}</p>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                      {op.amount > 0 && (
+                        <span style={{ fontSize: '11px', fontWeight: '700', color: '#3fb950' }}>
+                          ${op.amount.toLocaleString()}
+                        </span>
+                      )}
+                      {op.deadline && (
+                        <span style={{ fontSize: '11px', fontWeight: '600', color: simColor }}>
+                          {simDays !== null && simDays >= 0 ? `${simDays}d` : 'Closed'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

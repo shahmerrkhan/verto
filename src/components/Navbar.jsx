@@ -7,6 +7,7 @@ import Logo from './Logo'
 import SearchPalette from './SearchPalette'
 import { getAvatarColor, getInitials } from '../utils/avatarColor'
 
+
 export default function Navbar() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -26,12 +27,53 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false)
   const [showNavbar, setShowNavbar] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
+  const [badgeNotifs, setBadgeNotifs] = useState([])
 
   useEffect(() => {
     if (mobileMenuOpen) document.body.classList.add('menu-open')
     else document.body.classList.remove('menu-open')
     return () => document.body.classList.remove('menu-open')
   }, [mobileMenuOpen])
+
+  useEffect(() => {
+  if (!user) return
+  const channel = supabase
+    .channel('badge-watch')
+    .on('postgres_changes', {
+      event: 'UPDATE',
+      schema: 'public',
+      table: 'profiles',
+      filter: `id=eq.${user.id}`,
+    }, (payload) => {
+      const newBadges = payload.new?.badges || []
+      const oldBadges = payload.old?.badges || []
+      const earned = newBadges.filter(b => !oldBadges.includes(b))
+      if (earned.length > 0) {
+        const badgeDefs = {
+          first_save:  { emoji: '🌟', label: 'First Save' },
+          collector:   { emoji: '⭐', label: 'Collector' },
+          explorer:    { emoji: '🎯', label: 'Explorer' },
+          applied:     { emoji: '📝', label: 'Applied' },
+          applicant:   { emoji: '🚀', label: 'Applicant' },
+          winner:      { emoji: '🏆', label: 'Winner' },
+          speed_demon: { emoji: '⚡', label: 'Speed Demon' },
+        }
+        const newNotifs = earned.map(id => ({
+          id: `badge-${id}-${Date.now()}`,
+          type: 'badge',
+          title: `${badgeDefs[id]?.emoji || '🏅'} ${badgeDefs[id]?.label || id}`,
+          message: 'Badge earned!',
+          time: 'Just now',
+          icon: badgeDefs[id]?.emoji || '🏅',
+          relatedId: null,
+        }))
+        setBadgeNotifs(prev => [...newNotifs, ...prev])
+      }
+    })
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}, [user])
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -94,7 +136,7 @@ export default function Navbar() {
       highValue?.forEach(opp => {
         notifs.push({ id: `high-value-${opp.id}`, type: 'highValue', title: opp.title, message: `High value: $${opp.amount.toLocaleString()}`, relatedId: opp.id, time: 'Just now', icon: '💰' })
       })
-      setNotifications(notifs)
+      setNotifications([...badgeNotifs, ...notifs])
     } catch (error) { console.error('Error fetching notifications:', error) }
   }
 
@@ -135,7 +177,11 @@ export default function Navbar() {
 
   const isActive = (path) => location.pathname === path
   const handleLogout = () => { signOut(); navigate('/'); setMobileMenuOpen(false); setProfileDropdownOpen(false) }
-  const handleNotificationClick = (notification) => { navigate(`/opportunities/${notification.relatedId}`); setNotificationsOpen(false) }
+  const handleNotificationClick = (notification) => {
+  if (!notification.relatedId) { setNotificationsOpen(false); return }
+  navigate(`/opportunities/${notification.relatedId}`)
+  setNotificationsOpen(false)
+}
 
   const publicPaths = ['/', '/login', '/signup']
   if (publicPaths.includes(location.pathname)) return null

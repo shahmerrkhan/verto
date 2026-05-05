@@ -2,13 +2,11 @@ import { useState } from 'react'
 import OpportunityModal from './OpportunityModal'
 import MatchScore from './MatchScore'
 
-
-
 export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
   const [showModal, setShowModal] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
-  const { type, title, org_name, description, deadline, amount } = opportunity
   const [copied, setCopied] = useState(false)
+  const { type, title, org_name, description, deadline, amount } = opportunity
   const matchScore = opportunity._matchScore ?? null
 
   const handleViewDetails = () => { onLogView(opportunity.id); setShowModal(true) }
