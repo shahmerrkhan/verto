@@ -25,11 +25,12 @@ export default function MobileNav() {
   if (!user || !isMobile || menuOpen) return null
 
   const tabs = [
-    { path: '/dashboard', icon: '⊞', label: 'Home' },
-    { path: '/saves', icon: '◇', label: 'Saved' },
-    { path: '/analytics', icon: '▲', label: 'Stats' },
-    { path: '/profile', icon: '○', label: 'Profile' },
-  ]
+  { path: '/dashboard', icon: '⊞', label: 'Home' },
+  { path: '/saves', icon: '◇', label: 'Saved' },
+  { path: '/leaderboard', icon: '🏆', label: 'Winners' },
+  { path: '/analytics', icon: '▲', label: 'Stats' },
+  { path: '/profile', icon: '○', label: 'Profile' },
+]
 
   return (
     <>

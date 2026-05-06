@@ -166,14 +166,15 @@ export default function Navbar() {
   }, [lastScrollY])
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: '⊞' },
-    { path: '/courses', label: 'Courses', icon: '◈' },
-    { path: '/articles', label: 'Articles', icon: '◎' },
-    { path: '/research', label: 'Research', icon: '⬡' },
-    { path: '/saves', label: 'Saved', icon: '◇' },
-    { path: '/analytics', label: 'Analytics', icon: '▲' },
-    { path: '/profile', label: 'Profile', icon: '○' },
-  ]
+  { path: '/dashboard', label: 'Dashboard', icon: '⊞' },
+  { path: '/courses', label: 'Courses', icon: '◈' },
+  { path: '/articles', label: 'Articles', icon: '◎' },
+  { path: '/research', label: 'Research', icon: '⬡' },
+  { path: '/saves', label: 'Saved', icon: '◇' },
+  { path: '/leaderboard', label: 'Winners', icon: '🏆' },
+  { path: '/analytics', label: 'Analytics', icon: '▲' },
+  { path: '/profile', label: 'Profile', icon: '○' },
+]
 
   const isActive = (path) => location.pathname === path
   const handleLogout = () => { signOut(); navigate('/'); setMobileMenuOpen(false); setProfileDropdownOpen(false) }
@@ -183,7 +184,7 @@ export default function Navbar() {
   setNotificationsOpen(false)
 }
 
-  const publicPaths = ['/', '/login', '/signup']
+  const publicPaths = ['/', '/login', '/signup', '/for-organizers']
   if (publicPaths.includes(location.pathname)) return null
   if (!user) return null
 

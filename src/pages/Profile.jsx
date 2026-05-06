@@ -4,6 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import OnboardingProgress from '../components/OnboardingProgress'
 import { BadgeGrid } from '../components/Badges'
+import { useLocation } from 'react-router-dom'
+import MatchShareCard from '../components/MatchShareCard'
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -63,6 +65,9 @@ export default function Profile() {
   const [saved, setSaved] = useState(false)
   const [focused, setFocused] = useState(null)
   const [counts, setCounts] = useState({ saves: 0, apps: 0 })
+  const location = useLocation()
+  const [showShareCard, setShowShareCard] = useState(false)
+  const isNewUser = new URLSearchParams(location.search).get('new') === 'true'
 
   useEffect(() => {
     if (!user) return
@@ -89,6 +94,7 @@ export default function Profile() {
     }).eq('id', user.id)
     if (refreshProfile) await refreshProfile()
     setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500)
+    if (isNewUser) setShowShareCard(true)
   }
 
   const inputStyle = (name) => ({
@@ -99,6 +105,13 @@ export default function Profile() {
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif', animation: 'fadeSlideIn 0.5s cubic-bezier(0.22,1,0.36,1)' }}>
+      {showShareCard && (
+        <MatchShareCard
+          profile={{ ...form, grade: form.grade }}
+          onClose={() => setShowShareCard(false)}
+          onGoToDashboard={() => navigate('/dashboard')}
+        />
+      )}
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', marginBottom: '6px', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Your profile</h1>
         <p style={{ fontSize: '14px', color: '#7d8590' }}>Update your info to get better matched opportunities</p>

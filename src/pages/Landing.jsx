@@ -18,6 +18,11 @@ export default function Landing() {
             <span style={{ fontSize: '20px', fontWeight: '800', color: '#e6edf3', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>verto</span>
           </div>
           <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button onClick={() => navigate('/for-organizers')} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(245,158,11,0.2)', backgroundColor: 'transparent', color: '#f59e0b', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.08)'}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}>
+              For Organizers
+            </button>
             <button onClick={() => navigate('/login')} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease' }}
               onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
               onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'}>
@@ -186,6 +191,11 @@ export default function Landing() {
                 {link}
               </a>
             ))}
+            <a href="/for-organizers" style={{ fontSize: '12px', color: '#f59e0b', textDecoration: 'none', fontWeight: '700', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(245,158,11,0.2)', backgroundColor: 'rgba(245,158,11,0.06)', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.12)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.06)' }}>
+              For Organizers
+            </a>
           </div>
           <p style={{ fontSize: '11px', color: '#484f58', margin: 0, opacity: 0.6 }}>© {new Date().getFullYear()} Verto · Built for Canadian high school students</p>
         </div>

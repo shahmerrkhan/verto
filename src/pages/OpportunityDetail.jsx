@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import Footer from '../components/Footer'
 import SimilarOpportunities from '../components/SimilarOpportunities'
+import RelatedCourses from '../components/RelatedCourses'
 
 export default function OpportunityDetail() {
   const { id } = useParams()
@@ -136,8 +137,8 @@ export default function OpportunityDetail() {
             </div>
           </div>
         </div>
-        <SimilarOpportunities currentId={id} type={opportunity.type} />
-      </div>
+        <RelatedCourses opportunity={opportunity} />
+        <SimilarOpportunities currentId={id} type={opportunity.type} />      </div>
       <Footer />
     </div>
   )

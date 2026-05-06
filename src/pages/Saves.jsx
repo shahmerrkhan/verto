@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import OutcomeModal from '../components/OutcomeModal'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import OpportunityCard from '../components/OpportunityCard'
@@ -31,6 +32,7 @@ export default function Saves() {
   const [dismissedBanner, setDismissedBanner] = useState(false)
   const [pendingBadge, setPendingBadge] = useState(null)
   const [toast, setToast] = useState(null)
+  const [outcomeModal, setOutcomeModal] = useState(null) // { opportunity, saveMetaId }
 
   useEffect(() => { if (user) { fetchSavedOpportunities(); fetchCollections() } }, [user])
 
@@ -397,6 +399,16 @@ export default function Saves() {
                           {statusConfig[appStatus]?.icon} {statusConfig[appStatus]?.label}
                         </span>
                       )}
+                      {meta.outcome && (
+                        <span style={{
+                          padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '600',
+                          backgroundColor: meta.outcome === 'won' ? 'rgba(63,185,80,0.1)' : meta.outcome === 'finalist' ? 'rgba(245,158,11,0.1)' : 'rgba(129,140,248,0.1)',
+                          color: meta.outcome === 'won' ? '#3fb950' : meta.outcome === 'finalist' ? '#f59e0b' : '#818cf8',
+                          border: `1px solid ${meta.outcome === 'won' ? 'rgba(63,185,80,0.2)' : meta.outcome === 'finalist' ? 'rgba(245,158,11,0.2)' : 'rgba(129,140,248,0.2)'}`,
+                        }}>
+                          {meta.outcome === 'won' ? '🏆 Won' : meta.outcome === 'finalist' ? '🥈 Finalist' : meta.outcome === 'rejected' ? '❌ Rejected' : meta.outcome === 'waitlisted' ? '⏳ Waitlisted' : meta.outcome === 'withdrawn' ? '↩️ Withdrew' : '⏸️ Pending'}
+                        </span>
+                      )}
                       {isArchived && <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '600', backgroundColor: 'rgba(248,81,73,0.1)', color: '#f85149' }}>📦 Archived</span>}
                     </div>
 
@@ -417,6 +429,7 @@ export default function Saves() {
                           { title: 'Notes', icon: '📝', onClick: () => setExpandedNotes(expandedNotes === op.id ? null : op.id), active: hasNote, activeBg: 'rgba(245,158,11,0.1)', activeBorder: 'rgba(245,158,11,0.2)' },
                           { title: 'Move to collection', icon: '📂', onClick: () => { setOpportunityToMove(op.id); setShowMoveModal(true) }, active: op.collection_ids?.length > 0, activeBg: 'rgba(99,102,241,0.1)', activeBorder: 'rgba(99,102,241,0.2)' },
                           { title: isArchived ? 'Unarchive' : 'Archive', icon: '📦', onClick: () => toggleArchive(op.id), active: isArchived, activeBg: 'rgba(248,81,73,0.1)', activeBorder: 'rgba(248,81,73,0.2)' },
+                          { title: 'Log outcome', icon: meta.outcome ? '🏆' : '🎯', onClick: () => setOutcomeModal({ opportunity: op, saveMetaId: meta.id }), active: !!meta.outcome, activeBg: meta.outcome === 'won' || meta.outcome === 'finalist' ? 'rgba(63,185,80,0.1)' : 'rgba(129,140,248,0.1)', activeBorder: meta.outcome === 'won' || meta.outcome === 'finalist' ? 'rgba(63,185,80,0.2)' : 'rgba(129,140,248,0.2)' },
                         ].map(btn => (
                           <button key={btn.title} title={btn.title} onClick={btn.onClick} style={{ width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '6px', border: `1px solid ${btn.active ? btn.activeBorder : 'rgba(255,255,255,0.07)'}`, backgroundColor: btn.active ? btn.activeBg : 'rgba(255,255,255,0.03)', cursor: 'pointer', fontSize: '13px', transition: 'all 0.15s' }}>
                             {btn.icon}
@@ -475,8 +488,26 @@ export default function Saves() {
           onDismiss={() => setPendingBadge(null)}
         />
       )}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
-        
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+        {outcomeModal && (
+          <OutcomeModal
+            opportunity={outcomeModal.opportunity}
+            saveMetaId={outcomeModal.saveMetaId}
+            userId={user.id}
+            onClose={() => setOutcomeModal(null)}
+            onSaved={(outcome) => {
+              setMetadata(prev => ({
+                ...prev,
+                [outcomeModal.opportunity.id]: {
+                  ...(prev[outcomeModal.opportunity.id] || {}),
+                  outcome,
+                }
+              }))
+              if (outcome === 'won' || outcome === 'finalist') fireConfetti()
+              setToast({ message: outcome === 'won' ? '🏆 Win logged! Check the leaderboard.' : 'Outcome saved.', type: 'success' })
+            }}
+          />
+        )}        
       <Footer />
     </div>
   )

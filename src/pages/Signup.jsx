@@ -17,7 +17,7 @@ export default function Signup() {
     setLoading(true)
     const { error } = await signUp(email, password)
     if (error) { setError(error.message); setLoading(false); return }
-    navigate('/onboarding')
+    navigate('/onboarding?new=true')
   }
 
   return (

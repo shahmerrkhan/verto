@@ -24,6 +24,9 @@ import BackToTop from './components/BackToTop'
 import UrgentNudge from './components/UrgentNudge'
 import { useState } from 'react'
 import ShortcutManager from './components/ShortcutManager'
+import Leaderboard from './pages/Leaderboard'
+import ForOrganizers from './pages/ForOrganizers'
+
 
 function App() {
   const { loading, user } = useAuth()
@@ -70,6 +73,8 @@ function App() {
           <Route path="/research" element={<Research />} />
           <Route path="/admin/articles" element={<ProtectedRoute><AdminArticles /></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+          <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+          <Route path="/for-organizers" element={<ForOrganizers />} />
         </Routes>
         <MobileNav />
       <BackToTop />
