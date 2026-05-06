@@ -1,4 +1,8 @@
+import { useNavigate } from 'react-router-dom'
+
 export default function ProfileCompletion({ profile }) {
+  const navigate = useNavigate()
+
   const fields = [
     { key: 'full_name', label: 'Full name', completed: !!profile?.full_name },
     { key: 'grade', label: 'Grade', completed: !!profile?.grade },
@@ -16,7 +20,15 @@ export default function ProfileCompletion({ profile }) {
     <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
         <span style={{ fontSize: '13px', fontWeight: '700', color: '#e6edf3' }}>Complete your profile</span>
-        <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: '700' }}>{percentage}%</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: '700' }}>{percentage}%</span>
+          <button
+            onClick={() => navigate('/profile')}
+            style={{ padding: '5px 12px', borderRadius: '6px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '11px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            Fix now →
+          </button>
+        </div>
       </div>
       <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
         <div style={{ height: '100%', width: `${percentage}%`, backgroundColor: '#f59e0b', borderRadius: '2px', transition: 'width 0.4s ease' }} />

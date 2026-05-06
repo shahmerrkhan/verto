@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import OpportunityModal from './OpportunityModal'
 import MatchScore from './MatchScore'
+import ApplyModal from './ApplyModal'
+
 
 export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
   const [showModal, setShowModal] = useState(false)
@@ -8,6 +10,7 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
   const [copied, setCopied] = useState(false)
   const { type, title, org_name, description, deadline, amount } = opportunity
   const matchScore = opportunity._matchScore ?? null
+  const [showApplyModal, setShowApplyModal] = useState(false)
 
   const handleViewDetails = () => { onLogView(opportunity.id); setShowModal(true) }
 
@@ -94,8 +97,8 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
               </button>
               {!isApplied ? (
                 <button style={{ padding: '9px 12px', backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '600', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', whiteSpace: 'nowrap' }}
-                  onClick={(e) => { e.stopPropagation(); onTrackApplication(opportunity.id) }}>
-                  Mark applied
+                  onClick={(e) => { e.stopPropagation(); setShowApplyModal(true) }}>
+                  Apply →
                 </button>
               ) : (
                 <span style={{ padding: '9px 12px', backgroundColor: 'rgba(63,185,80,0.1)', color: '#3fb950', border: '1px solid rgba(63,185,80,0.2)', fontSize: '12px', fontWeight: '600', borderRadius: '8px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center' }}>
@@ -125,6 +128,13 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
           onToggleSave={onToggleSave}
           onLogView={onLogView}
           onClose={() => setShowModal(false)}
+        />
+      )}
+      {showApplyModal && (
+        <ApplyModal
+          opportunity={opportunity}
+          onClose={() => setShowApplyModal(false)}
+          onApplied={(id) => { onTrackApplication(id); setShowApplyModal(false) }}
         />
       )}
     </>
