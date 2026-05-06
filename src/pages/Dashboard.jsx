@@ -74,19 +74,41 @@ export default function Dashboard() {
   }
 
   function applyFilters(opps) {
-    setCurrentPage(1)
-    let result = opps
-    if (activeQuickFilter) {
-      const qf = QUICK_FILTERS.find(f => f.id === activeQuickFilter)
-      if (qf) result = result.filter(qf.filter)
-    }
-    if (filters.type !== 'all') result = result.filter(op => op.type === filters.type)
-    if (filters.search.trim()) {
-      const term = filters.search.toLowerCase()
-      result = result.filter(op => op.title.toLowerCase().includes(term) || op.org_name.toLowerCase().includes(term) || op.description.toLowerCase().includes(term))
-    }
-    setFilteredOpportunities(result)
+  setCurrentPage(1)
+  let result = opps
+
+  if (activeQuickFilter) {
+    const qf = QUICK_FILTERS.find(f => f.id === activeQuickFilter)
+    if (qf) result = result.filter(qf.filter)
   }
+
+  if (filters.type !== 'all') result = result.filter(op => op.type === filters.type)
+
+  if (filters.province && filters.province !== 'all') {
+    result = result.filter(op => {
+      const scope = op.province_scope || []
+      return scope.includes('ALL') || scope.includes(filters.province)
+    })
+  }
+
+  if (filters.minAmount) {
+    result = result.filter(op => op.amount && op.amount >= filters.minAmount)
+  }
+
+  if (filters.search?.trim()) {
+    const term = filters.search.toLowerCase()
+    result = result.filter(op => [
+      op.title,
+      op.org_name,
+      op.description,
+      op.eligibility_notes,
+      ...(Array.isArray(op.interest_tags) ? op.interest_tags : []),
+      op.type,
+    ].some(field => field?.toLowerCase().includes(term)))
+  }
+
+  setFilteredOpportunities(result)
+}
 
   function getDaysUntilDeadline(deadline) {
     if (!deadline) return null
