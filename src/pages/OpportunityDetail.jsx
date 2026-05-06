@@ -6,6 +6,8 @@ import { useTheme } from '../context/ThemeContext'
 import Footer from '../components/Footer'
 import SimilarOpportunities from '../components/SimilarOpportunities'
 import RelatedCourses from '../components/RelatedCourses'
+import UpcomingSessions from '../components/UpcomingSessions'
+
 
 export default function OpportunityDetail() {
   const { id } = useParams()
@@ -137,8 +139,10 @@ export default function OpportunityDetail() {
             </div>
           </div>
         </div>
+        <UpcomingSessions opportunity={opportunity} />
         <RelatedCourses opportunity={opportunity} />
-        <SimilarOpportunities currentId={id} type={opportunity.type} />      </div>
+        <SimilarOpportunities currentId={id} type={opportunity.type} />
+        </div>
       <Footer />
     </div>
   )

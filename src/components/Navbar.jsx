@@ -28,6 +28,7 @@ export default function Navbar() {
   const [showNavbar, setShowNavbar] = useState(true)
   const [lastScrollY, setLastScrollY] = useState(0)
   const [badgeNotifs, setBadgeNotifs] = useState([])
+  const publicPaths = ['/', '/login', '/signup', '/for-organizers', '/mentors']
 
   useEffect(() => {
     if (mobileMenuOpen) document.body.classList.add('menu-open')
@@ -184,7 +185,6 @@ export default function Navbar() {
   setNotificationsOpen(false)
 }
 
-  const publicPaths = ['/', '/login', '/signup', '/for-organizers']
   if (publicPaths.includes(location.pathname)) return null
   if (!user) return null
 

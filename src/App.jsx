@@ -26,6 +26,8 @@ import { useState } from 'react'
 import ShortcutManager from './components/ShortcutManager'
 import Leaderboard from './pages/Leaderboard'
 import ForOrganizers from './pages/ForOrganizers'
+import Mentors from './pages/Mentors'
+
 
 
 function App() {
@@ -75,6 +77,7 @@ function App() {
           <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
           <Route path="/for-organizers" element={<ForOrganizers />} />
+          <Route path="/mentors" element={<Mentors />} />
         </Routes>
         <MobileNav />
       <BackToTop />

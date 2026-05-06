@@ -196,6 +196,11 @@ export default function Landing() {
               onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.06)' }}>
               For Organizers
             </a>
+            <a href="/mentors" style={{ fontSize: '12px', color: '#f59e0b', textDecoration: 'none', fontWeight: '700', padding: '6px 10px', borderRadius: '6px', border: '1px solid rgba(245,158,11,0.2)', backgroundColor: 'rgba(245,158,11,0.06)', transition: 'all 0.15s ease' }}
+              onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.12)' }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'rgba(245,158,11,0.06)' }}>
+              Become a Mentor
+            </a>
           </div>
           <p style={{ fontSize: '11px', color: '#484f58', margin: 0, opacity: 0.6 }}>© {new Date().getFullYear()} Verto · Built for Canadian high school students</p>
         </div>
