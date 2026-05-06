@@ -139,6 +139,50 @@ export default function OpportunityDetail() {
             </div>
           </div>
         </div>
+            {opportunity?.resources && opportunity.resources.length > 0 && (
+          <div style={{ marginTop: '24px', paddingTop: '24px', borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#e6edf3', margin: '0 0 14px', fontFamily: "'Syne', sans-serif" }}>
+              📚 Resources to help you win
+            </h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {opportunity.resources.map((resource, idx) => (
+                <a
+                  key={idx}
+                  href={resource.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    backgroundColor: '#161b22',
+                    border: '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: '10px',
+                    textDecoration: 'none',
+                    transition: 'all 0.2s',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.backgroundColor = '#1c2128'
+                    e.currentTarget.style.borderColor = 'rgba(52,211,153,0.3)'
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.backgroundColor = '#161b22'
+                    e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'
+                  }}
+                >
+                  <span style={{ fontSize: '16px' }}>🔗</span>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ fontSize: '13px', fontWeight: '600', color: '#e6edf3', margin: 0 }}>
+                      {resource.title}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: '12px', color: '#7d8590' }}>Open →</span>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
         <UpcomingSessions opportunity={opportunity} />
         <RelatedCourses opportunity={opportunity} />
         <SimilarOpportunities currentId={id} type={opportunity.type} />
