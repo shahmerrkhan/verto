@@ -6,6 +6,8 @@ import { logError } from './monitoring'
 import { saveArrayToOffline, getAllFromOffline, isOnline } from './offlineSupport'
 import { queueRequest } from './requestQueuing'
 import { trackSave, trackApplication, trackSearch } from './analytics'
+import { checkServerRateLimit } from './serverRateLimit'
+
 
 function handleError(error, operation) {
   console.error(`DB Error (${operation}):`, error)
@@ -167,6 +169,11 @@ export async function saveOpportunity(userId, opportunityId) {
   return queueRequest(async () => {
     try {
       if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      
+      const rateCheck = await checkServerRateLimit('save')
+      if (!rateCheck.allowed) {
+        return { error: { message: `Too many saves. Try again in ${rateCheck.retryAfter}s`, code: 429 } }
+      }
       const savedAt = new Date().toISOString()
       
       await retryWithBackoff(() =>

@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import OutcomeModal from '../components/OutcomeModal'
 import { useAuth } from '../context/AuthContext'
-import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getOpportunities, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections } from '../lib/dbHelpers'
+import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getOpportunities, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections, logView, awardBadges } from '../lib/dbHelpers'
+import { supabase } from '../lib/supabase'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
@@ -74,7 +75,6 @@ export default function Saves() {
   setSavedOpportunities(prev => prev.filter(op => op.id !== id))
 }
 async function handleLogView(id) { 
-  const { logView } = require('../lib/dbHelpers')
   await logView(user.id, id) 
 }
 async function fetchMetadata() { 
@@ -102,7 +102,6 @@ async function fetchCollections() {
   async function awardBadgesInSaves(newBadgeIds) {
     const { data: prof } = await supabase.from('profiles').select('badges').eq('id', user.id).single()
     const allBadges = [...new Set([...(prof?.badges || []), ...newBadgeIds])]
-    const { awardBadges } = require('../lib/dbHelpers')
     await awardBadges(user.id, prof?.badges || [], newBadgeIds)
     setPendingBadge(newBadgeIds[0])
   }
@@ -452,7 +451,7 @@ async function updateNote(oppId, note) {
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
                           <button onClick={() => { handleRemoveFromAllCollections(op.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(248,81,73,0.2)', backgroundColor: 'rgba(248,81,73,0.06)', color: '#f85149', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>Remove from all</button>
                           {collections.map(c => (
-                            <button key={c.id} onClick={() => { handleMoveToCollection(op.id, c.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', color: '#e6edf3', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>{c.name}</button>
+                            <button key={c.id} onClick={() => { moveToCollection(op.id, c.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', color: '#e6edf3', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>{c.name}</button>
                           ))}
                         </div>
                         <button onClick={() => { setShowMoveModal(false); setOpportunityToMove(null) }} style={{ fontSize: '11px', color: '#484f58', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Cancel</button>

@@ -1,7 +1,16 @@
 import { supabase } from './supabase'
+import { retryWithBackoff } from './retryLogic'
+import { getCached, setCache, clearCache } from './queryOptimization'
+import { encryptNotes, decryptNotes } from './encryption'
+import { logError } from './monitoring'
+import { saveArrayToOffline, getAllFromOffline, isOnline } from './offlineSupport'
+import { queueRequest } from './requestQueuing'
+import { trackSave, trackApplication as analyticsTrackApplication, trackSearch } from './analytics'
+import { checkServerRateLimit } from './serverRateLimit'
 
 function handleError(error, operation) {
   console.error(`DB Error (${operation}):`, error)
+  logError(error, operation)
   return {
     error: {
       message: error.message || 'Database operation failed',
@@ -11,408 +20,346 @@ function handleError(error, operation) {
   }
 }
 
-// ─── PROFILE ────────────────────────────────────────────────────────────────
-
 export async function getProfile(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
+    const cached = getCached(`profile:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('profiles').select('*').eq('id', userId).single()
+    )
     if (error) return handleError(error, 'getProfile')
+    if (data) { setCache(`profile:${userId}`, data); await saveArrayToOffline('profile', [data]) }
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getProfile')
-  }
+  } catch (err) { return handleError(err, 'getProfile') }
 }
 
 export async function updateProfile(userId, updates) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ ...updates, updated_at: new Date().toISOString() })
-      .eq('id', userId)
-      .select()
-      .single()
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('profiles').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', userId).select().single()
+    )
     if (error) return handleError(error, 'updateProfile')
+    if (data) { setCache(`profile:${userId}`, data); await saveArrayToOffline('profile', [data]) }
+    clearCache('analytics')
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'updateProfile')
-  }
+  } catch (err) { return handleError(err, 'updateProfile') }
 }
-
-// ─── OPPORTUNITIES ───────────────────────────────────────────────────────────
 
 export async function getOpportunities() {
   try {
-    // Try online first
-    if (isOnline()) {
-      const cached = getCached('opportunities')
-      if (cached) return { data: cached, error: null }
-      
-      const { data, error } = await retryWithBackoff(() =>
-        supabase
-          .from('opportunities')
-          .select('*')
-          .eq('is_active', true)
-      )
-      
-      if (error) {
-        // Fall back to offline if online fails
-        const offline = await getAllFromOffline('opportunities')
-        return { data: offline || [], error: null }
-      }
-      if (data) {
-        setCache('opportunities', data, 10 * 60 * 1000)
-        await saveArrayToOffline('opportunities', data)
-      }
-      return { data, error: null }
-    } else {
-      // Offline mode
+    if (!isOnline()) {
       const offline = await getAllFromOffline('opportunities')
       return { data: offline || [], error: null }
     }
-  } catch (err) {
-    return handleError(err, 'getOpportunities')
-  }
+    const cached = getCached('opportunities')
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('opportunities').select('*').eq('is_active', true)
+    )
+    if (error) {
+      const offline = await getAllFromOffline('opportunities')
+      return { data: offline || [], error: null }
+    }
+    if (data) { setCache('opportunities', data, 10 * 60 * 1000); await saveArrayToOffline('opportunities', data) }
+    return { data, error: null }
+  } catch (err) { return handleError(err, 'getOpportunities') }
 }
 
 export async function getOpportunityById(id) {
   try {
     if (!id) throw new Error('Opportunity ID required')
-    const { data, error } = await supabase
-      .from('opportunities')
-      .select('*')
-      .eq('id', id)
-      .single()
+    const cached = getCached(`opportunity:${id}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('opportunities').select('*').eq('id', id).single()
+    )
     if (error) return handleError(error, 'getOpportunityById')
+    if (data) setCache(`opportunity:${id}`, data, 10 * 60 * 1000)
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getOpportunityById')
-  }
+  } catch (err) { return handleError(err, 'getOpportunityById') }
 }
-
-// ─── SAVES ───────────────────────────────────────────────────────────────────
 
 export async function getSaves(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('saves')
-      .select('opportunity_id, created_at')
-      .eq('user_id', userId)
-    if (error) return handleError(error, 'getSaves')
+    if (!isOnline()) {
+      const offline = await getAllFromOffline('saves')
+      return { data: offline || [], error: null }
+    }
+    const cached = getCached(`saves:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('saves').select('opportunity_id, created_at').eq('user_id', userId)
+    )
+    if (error) {
+      const offline = await getAllFromOffline('saves')
+      return { data: offline || [], error: null }
+    }
+    if (data) { setCache(`saves:${userId}`, data); await saveArrayToOffline('saves', data) }
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getSaves')
-  }
+  } catch (err) { return handleError(err, 'getSaves') }
 }
 
 export async function saveOpportunity(userId, opportunityId) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const savedAt = new Date().toISOString()
-    const { error: saveError } = await supabase
-      .from('saves')
-      .insert({ user_id: userId, opportunity_id: opportunityId, saved_at: savedAt })
-    if (saveError) return handleError(saveError, 'saveOpportunity')
-    const { error: metaError } = await supabase
-      .from('save_metadata')
-      .upsert(
-        { user_id: userId, opportunity_id: opportunityId, saved_at: savedAt },
-        { onConflict: 'user_id,opportunity_id' }
-      )
-    if (metaError) return handleError(metaError, 'saveOpportunity')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'saveOpportunity')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      const rateCheck = await checkServerRateLimit('save')
+      if (!rateCheck.allowed) return { error: { message: `Too many saves. Try again in ${rateCheck.retryAfter}s`, code: 429 } }
+      const savedAt = new Date().toISOString()
+      await retryWithBackoff(() => supabase.from('saves').insert({ user_id: userId, opportunity_id: opportunityId, saved_at: savedAt }))
+      await retryWithBackoff(() => supabase.from('save_metadata').upsert({ user_id: userId, opportunity_id: opportunityId, saved_at: savedAt }, { onConflict: 'user_id,opportunity_id' }))
+      clearCache(`saves:${userId}`); clearCache('analytics')
+      analyticsTrackApplication(opportunityId)
+      return { error: null }
+    } catch (err) { return handleError(err, 'saveOpportunity') }
+  }, 'high')
 }
 
 export async function unsaveOpportunity(userId, opportunityId) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const { error: saveError } = await supabase
-      .from('saves')
-      .delete()
-      .eq('user_id', userId)
-      .eq('opportunity_id', opportunityId)
-    if (saveError) return handleError(saveError, 'unsaveOpportunity')
-    const { error: metaError } = await supabase
-      .from('save_metadata')
-      .delete()
-      .eq('user_id', userId)
-      .eq('opportunity_id', opportunityId)
-    if (metaError) return handleError(metaError, 'unsaveOpportunity')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'unsaveOpportunity')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      await retryWithBackoff(() => supabase.from('saves').delete().eq('user_id', userId).eq('opportunity_id', opportunityId))
+      await retryWithBackoff(() => supabase.from('save_metadata').delete().eq('user_id', userId).eq('opportunity_id', opportunityId))
+      clearCache(`saves:${userId}`); clearCache('analytics')
+      return { error: null }
+    } catch (err) { return handleError(err, 'unsaveOpportunity') }
+  }, 'high')
 }
-
-// ─── SAVE METADATA ───────────────────────────────────────────────────────────
 
 export async function getSaveMetadata(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('save_metadata')
-      .select('*')
-      .eq('user_id', userId)
-    if (error) return handleError(error, 'getSaveMetadata')
-    return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getSaveMetadata')
-  }
+    if (!isOnline()) {
+      const offline = await getAllFromOffline('metadata')
+      return { data: offline || [], error: null }
+    }
+    const cached = getCached(`metadata:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('save_metadata').select('*').eq('user_id', userId)
+    )
+    if (error) {
+      const offline = await getAllFromOffline('metadata')
+      return { data: offline || [], error: null }
+    }
+    const decrypted = data?.map(item => ({ ...item, notes: item.notes ? decryptNotes(item.notes) : item.notes })) || []
+    if (decrypted) { setCache(`metadata:${userId}`, decrypted); await saveArrayToOffline('metadata', decrypted) }
+    return { data: decrypted, error: null }
+  } catch (err) { return handleError(err, 'getSaveMetadata') }
 }
 
 export async function upsertSaveMetadata(userId, opportunityId, updates) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const { data, error } = await supabase
-      .from('save_metadata')
-      .upsert(
-        { user_id: userId, opportunity_id: opportunityId, ...updates, updated_at: new Date().toISOString() },
-        { onConflict: 'user_id,opportunity_id' }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      const updatePayload = { ...updates, notes: updates.notes ? encryptNotes(updates.notes) : updates.notes, updated_at: new Date().toISOString() }
+      const { data, error } = await retryWithBackoff(() =>
+        supabase.from('save_metadata').upsert({ user_id: userId, opportunity_id: opportunityId, ...updatePayload }, { onConflict: 'user_id,opportunity_id' }).select().single()
       )
-      .select()
-      .single()
-    if (error) return handleError(error, 'upsertSaveMetadata')
-    return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'upsertSaveMetadata')
-  }
+      if (error) return handleError(error, 'upsertSaveMetadata')
+      const decrypted = data ? { ...data, notes: data.notes ? decryptNotes(data.notes) : data.notes } : data
+      clearCache(`metadata:${userId}`); clearCache('analytics')
+      return { data: decrypted, error: null }
+    } catch (err) { return handleError(err, 'upsertSaveMetadata') }
+  }, 'normal')
 }
-
-// ─── APPLICATIONS ────────────────────────────────────────────────────────────
 
 export async function getApplications(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('applications')
-      .select('opportunity_id, created_at, applied_at')
-      .eq('user_id', userId)
-    if (error) return handleError(error, 'getApplications')
+    if (!isOnline()) {
+      const offline = await getAllFromOffline('applications')
+      return { data: offline || [], error: null }
+    }
+    const cached = getCached(`applications:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('applications').select('opportunity_id, created_at, applied_at').eq('user_id', userId)
+    )
+    if (error) {
+      const offline = await getAllFromOffline('applications')
+      return { data: offline || [], error: null }
+    }
+    if (data) { setCache(`applications:${userId}`, data); await saveArrayToOffline('applications', data) }
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getApplications')
-  }
+  } catch (err) { return handleError(err, 'getApplications') }
 }
 
 export async function trackApplication(userId, opportunityId) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const appliedAt = new Date().toISOString()
-    const { error: appError } = await supabase
-      .from('applications')
-      .insert({ user_id: userId, opportunity_id: opportunityId, applied_at: appliedAt })
-    if (appError) return handleError(appError, 'trackApplication')
-    const { error: metaError } = await supabase
-      .from('save_metadata')
-      .upsert(
-        { user_id: userId, opportunity_id: opportunityId, applied_at: appliedAt, is_applied: true },
-        { onConflict: 'user_id,opportunity_id' }
-      )
-    if (metaError) return handleError(metaError, 'trackApplication')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'trackApplication')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      const rateCheck = await checkServerRateLimit('apply')
+      if (!rateCheck.allowed) return { error: { message: `Too many applications. Try again in ${rateCheck.retryAfter}s`, code: 429 } }
+      const appliedAt = new Date().toISOString()
+      await retryWithBackoff(() => supabase.from('applications').insert({ user_id: userId, opportunity_id: opportunityId, applied_at: appliedAt }))
+      await retryWithBackoff(() => supabase.from('save_metadata').upsert({ user_id: userId, opportunity_id: opportunityId, applied_at: appliedAt, is_applied: true, application_status: 'applied' }, { onConflict: 'user_id,opportunity_id' }))
+      clearCache(`applications:${userId}`); clearCache(`metadata:${userId}`); clearCache('analytics')
+      analyticsTrackApplication(opportunityId)
+      return { error: null }
+    } catch (err) { return handleError(err, 'trackApplication') }
+  }, 'high')
 }
 
 export async function deleteApplication(userId, opportunityId) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const { error } = await supabase
-      .from('applications')
-      .delete()
-      .eq('user_id', userId)
-      .eq('opportunity_id', opportunityId)
-    if (error) return handleError(error, 'deleteApplication')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'deleteApplication')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      await retryWithBackoff(() => supabase.from('applications').delete().eq('user_id', userId).eq('opportunity_id', opportunityId))
+      clearCache(`applications:${userId}`); clearCache('analytics')
+      return { error: null }
+    } catch (err) { return handleError(err, 'deleteApplication') }
+  }, 'normal')
 }
 
-// ─── VIEWS ───────────────────────────────────────────────────────────────────
-
 export async function logView(userId, opportunityId) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const { error } = await supabase
-      .from('opportunity_views')
-      .insert({ user_id: userId, opportunity_id: opportunityId })
-    if (error) return handleError(error, 'logView')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'logView')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      await retryWithBackoff(() => supabase.from('opportunity_views').insert({ user_id: userId, opportunity_id: opportunityId }))
+      clearCache('analytics')
+      return { error: null }
+    } catch (err) { return handleError(err, 'logView') }
+  }, 'normal')
 }
 
 export async function getViews(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('opportunity_views')
-      .select('opportunity_id, created_at')
-      .eq('user_id', userId)
+    const cached = getCached(`views:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('opportunity_views').select('opportunity_id, created_at').eq('user_id', userId)
+    )
     if (error) return handleError(error, 'getViews')
+    if (data) setCache(`views:${userId}`, data)
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getViews')
-  }
+  } catch (err) { return handleError(err, 'getViews') }
 }
-
-// ─── COLLECTIONS ─────────────────────────────────────────────────────────────
 
 export async function getCollections(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('collections')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true })
-    if (error) return handleError(error, 'getCollections')
+    if (!isOnline()) {
+      const offline = await getAllFromOffline('collections')
+      return { data: offline || [], error: null }
+    }
+    const cached = getCached(`collections:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('collections').select('*').eq('user_id', userId).order('created_at', { ascending: true })
+    )
+    if (error) {
+      const offline = await getAllFromOffline('collections')
+      return { data: offline || [], error: null }
+    }
+    if (data) { setCache(`collections:${userId}`, data); await saveArrayToOffline('collections', data) }
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getCollections')
-  }
+  } catch (err) { return handleError(err, 'getCollections') }
 }
 
 export async function createCollection(userId, name) {
-  try {
-    if (!userId || !name) throw new Error('User ID and collection name required')
-    const { data, error } = await supabase
-      .from('collections')
-      .insert({ user_id: userId, name })
-      .select()
-      .single()
-    if (error) return handleError(error, 'createCollection')
-    return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'createCollection')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !name) throw new Error('User ID and collection name required')
+      const { data, error } = await retryWithBackoff(() =>
+        supabase.from('collections').insert({ user_id: userId, name }).select().single()
+      )
+      if (error) return handleError(error, 'createCollection')
+      clearCache(`collections:${userId}`)
+      return { data, error: null }
+    } catch (err) { return handleError(err, 'createCollection') }
+  }, 'normal')
 }
 
 export async function deleteCollection(userId, collectionId) {
-  try {
-    if (!userId || !collectionId) throw new Error('User ID and Collection ID required')
-    await supabase
-      .from('opportunity_collections')
-      .delete()
-      .eq('collection_id', collectionId)
-      .eq('user_id', userId)
-    const { error } = await supabase
-      .from('collections')
-      .delete()
-      .eq('id', collectionId)
-      .eq('user_id', userId)
-    if (error) return handleError(error, 'deleteCollection')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'deleteCollection')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !collectionId) throw new Error('User ID and Collection ID required')
+      await retryWithBackoff(() => supabase.from('opportunity_collections').delete().eq('collection_id', collectionId).eq('user_id', userId))
+      await retryWithBackoff(() => supabase.from('collections').delete().eq('id', collectionId).eq('user_id', userId))
+      clearCache(`collections:${userId}`)
+      return { error: null }
+    } catch (err) { return handleError(err, 'deleteCollection') }
+  }, 'normal')
 }
 
 export async function addToCollection(userId, opportunityId, collectionId) {
-  try {
-    if (!userId || !opportunityId || !collectionId) throw new Error('User ID, Opportunity ID, and Collection ID required')
-    const { error } = await supabase
-      .from('opportunity_collections')
-      .insert({ user_id: userId, opportunity_id: opportunityId, collection_id: collectionId })
-    if (error) return handleError(error, 'addToCollection')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'addToCollection')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId || !collectionId) throw new Error('User ID, Opportunity ID, and Collection ID required')
+      await retryWithBackoff(() => supabase.from('opportunity_collections').insert({ user_id: userId, opportunity_id: opportunityId, collection_id: collectionId }))
+      clearCache(`collections:${userId}`)
+      return { error: null }
+    } catch (err) { return handleError(err, 'addToCollection') }
+  }, 'normal')
 }
 
 export async function removeFromAllCollections(userId, opportunityId) {
-  try {
-    if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-    const { error } = await supabase
-      .from('opportunity_collections')
-      .delete()
-      .eq('opportunity_id', opportunityId)
-      .eq('user_id', userId)
-    if (error) return handleError(error, 'removeFromAllCollections')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'removeFromAllCollections')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
+      await retryWithBackoff(() => supabase.from('opportunity_collections').delete().eq('opportunity_id', opportunityId).eq('user_id', userId))
+      clearCache(`collections:${userId}`)
+      return { error: null }
+    } catch (err) { return handleError(err, 'removeFromAllCollections') }
+  }, 'normal')
 }
 
 export async function getOpportunityCollections(userId) {
   try {
     if (!userId) throw new Error('User ID required')
-    const { data, error } = await supabase
-      .from('opportunity_collections')
-      .select('opportunity_id, collection_id')
-      .eq('user_id', userId)
+    const cached = getCached(`opp-collections:${userId}`)
+    if (cached) return { data: cached, error: null }
+    const { data, error } = await retryWithBackoff(() =>
+      supabase.from('opportunity_collections').select('opportunity_id, collection_id').eq('user_id', userId)
+    )
     if (error) return handleError(error, 'getOpportunityCollections')
+    if (data) setCache(`opp-collections:${userId}`, data)
     return { data, error: null }
-  } catch (err) {
-    return handleError(err, 'getOpportunityCollections')
-  }
+  } catch (err) { return handleError(err, 'getOpportunityCollections') }
 }
-
-// ─── BADGES ──────────────────────────────────────────────────────────────────
 
 export async function awardBadges(userId, currentBadges, newBadgeIds) {
-  try {
-    if (!userId || !Array.isArray(newBadgeIds)) throw new Error('User ID and badge IDs required')
-    const merged = [...new Set([...currentBadges, ...newBadgeIds])]
-    const { error } = await supabase
-      .from('profiles')
-      .update({ badges: merged })
-      .eq('id', userId)
-    if (error) return handleError(error, 'awardBadges')
-    return { error: null, merged }
-  } catch (err) {
-    return handleError(err, 'awardBadges')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !Array.isArray(newBadgeIds)) throw new Error('User ID and badge IDs required')
+      const merged = [...new Set([...currentBadges, ...newBadgeIds])]
+      await retryWithBackoff(() => supabase.from('profiles').update({ badges: merged }).eq('id', userId))
+      clearCache(`profile:${userId}`)
+      return { error: null, merged }
+    } catch (err) { return handleError(err, 'awardBadges') }
+  }, 'high')
 }
-
-// ─── ANALYTICS ───────────────────────────────────────────────────────────────
 
 export async function getAnalytics(userId) {
   try {
     if (!userId) throw new Error('User ID required')
+    const cached = getCached(`analytics:${userId}`)
+    if (cached) return cached
     const [viewsRes, savesRes, appsRes, metaRes] = await Promise.all([
-      supabase.from('opportunity_views').select('opportunity_id, created_at').eq('user_id', userId),
-      supabase.from('saves').select('opportunity_id, created_at').eq('user_id', userId),
-      supabase.from('applications').select('opportunity_id, created_at, applied_at').eq('user_id', userId),
-      supabase.from('save_metadata').select('*').eq('user_id', userId),
+      retryWithBackoff(() => supabase.from('opportunity_views').select('opportunity_id, created_at').eq('user_id', userId)),
+      retryWithBackoff(() => supabase.from('saves').select('opportunity_id, created_at').eq('user_id', userId)),
+      retryWithBackoff(() => supabase.from('applications').select('opportunity_id, created_at, applied_at').eq('user_id', userId)),
+      retryWithBackoff(() => supabase.from('save_metadata').select('*').eq('user_id', userId)),
     ])
-    return {
-      views: viewsRes.data || [],
-      saves: savesRes.data || [],
-      applications: appsRes.data || [],
-      metadata: metaRes.data || [],
-      error: null
-    }
-  } catch (err) {
-    return handleError(err, 'getAnalytics')
-  }
+    const decryptedMeta = (metaRes.data || []).map(item => ({ ...item, notes: item.notes ? decryptNotes(item.notes) : item.notes }))
+    const result = { views: viewsRes.data || [], saves: savesRes.data || [], applications: appsRes.data || [], metadata: decryptedMeta, error: null }
+    setCache(`analytics:${userId}`, result, 2 * 60 * 1000)
+    return result
+  } catch (err) { return handleError(err, 'getAnalytics') }
 }
 
-// ─── USER ACTIVITY ────────────────────────────────────────────────────────────
-
 export async function logActivity(userId, opportunityId, actionType) {
-  try {
-    if (!userId || !opportunityId || !actionType) throw new Error('User ID, Opportunity ID, and action type required')
-    const { error } = await supabase
-      .from('user_activity')
-      .insert({ user_id: userId, opportunity_id: opportunityId, action_type: actionType })
-    if (error) return handleError(error, 'logActivity')
-    return { error: null }
-  } catch (err) {
-    return handleError(err, 'logActivity')
-  }
+  return queueRequest(async () => {
+    try {
+      if (!userId || !opportunityId || !actionType) throw new Error('User ID, Opportunity ID, and action type required')
+      await retryWithBackoff(() => supabase.from('user_activity').insert({ user_id: userId, opportunity_id: opportunityId, action_type: actionType }))
+      return { error: null }
+    } catch (err) { return handleError(err, 'logActivity') }
+  }, 'normal')
 }

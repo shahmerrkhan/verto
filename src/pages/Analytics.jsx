@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { getAnalytics } from '../lib/dbHelpers'
+import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 
 export default function Analytics() {
