@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
+import { getOpportunities, getSaves, getApplications, saveOpportunity, unsaveOpportunity, trackApplication, logView, awardBadges } from '../lib/dbHelpers'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
 import { rankOpportunitiesWithAI } from '../lib/aiMatcher'
@@ -15,8 +15,8 @@ import YouMightHaveMissed from '../components/YouMightHaveMissed'
 import confetti from 'canvas-confetti'
 import { checkNewBadges, BADGE_DEFINITIONS, BadgeUnlockNotification } from '../components/Badges'
 import { calculateMatchScore } from '../lib/opportunityMatcher'
-
-
+import { searchOpportunities, rankSearchResults } from '../lib/fullTextSearch'
+import { trackPageView, trackSearch } from '../lib/analytics'
 
 const QUICK_FILTERS = [
   { label: '💰 High value', id: 'highValue', filter: (op) => (op.amount || 0) >= 5000 },
@@ -49,12 +49,26 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1)
   const [pendingBadge, setPendingBadge] = useState(null)
 
-  useEffect(() => { if (profile) { fetchOpportunities(); fetchSaves(); fetchApplications() } }, [profile])
-  useEffect(() => { applyFilters(opportunities) }, [opportunities, filters, activeQuickFilter])
+  useEffect(() => {
+    trackPageView('/dashboard')
+    if (profile) {
+      fetchOpportunities()
+      fetchSaves()
+      fetchApplications()
+    }
+  }, [profile])
+
+  useEffect(() => {
+    applyFilters(opportunities)
+  }, [opportunities, filters, activeQuickFilter])
 
   async function fetchOpportunities() {
-    const { data, error } = await supabase.from('opportunities').select('*').eq('is_active', true)
-    if (error) { console.error(error); setLoading(false); return }
+    const { data, error } = await getOpportunities()
+    if (error) {
+      console.error(error)
+      setLoading(false)
+      return
+    }
     const ranked = (profile ? rankOpportunitiesWithAI(data, profile) : data).map(op => ({
       ...op,
       _matchScore: profile ? calculateMatchScore(op, profile) : null,
@@ -64,51 +78,45 @@ export default function Dashboard() {
   }
 
   async function fetchSaves() {
-    const { data } = await supabase.from('saves').select('opportunity_id').eq('user_id', user.id)
-    setSaves(data ? data.map(s => s.opportunity_id) : [])
+    const { data } = await getSaves(user.id)
+    setSaves(data?.map(s => s.opportunity_id) || [])
   }
 
   async function fetchApplications() {
-    const { data } = await supabase.from('applications').select('opportunity_id').eq('user_id', user.id)
-    setApplications(data ? data.map(a => a.opportunity_id) : [])
+    const { data } = await getApplications(user.id)
+    setApplications(data?.map(a => a.opportunity_id) || [])
   }
 
   function applyFilters(opps) {
-  setCurrentPage(1)
-  let result = opps
+    setCurrentPage(1)
+    let result = opps
 
-  if (activeQuickFilter) {
-    const qf = QUICK_FILTERS.find(f => f.id === activeQuickFilter)
-    if (qf) result = result.filter(qf.filter)
+    if (activeQuickFilter) {
+      const qf = QUICK_FILTERS.find(f => f.id === activeQuickFilter)
+      if (qf) result = result.filter(qf.filter)
+    }
+
+    if (filters.type !== 'all') result = result.filter(op => op.type === filters.type)
+
+    if (filters.province && filters.province !== 'all') {
+      result = result.filter(op => {
+        const scope = op.province_scope || []
+        return scope.includes('ALL') || scope.includes(filters.province)
+      })
+    }
+
+    if (filters.minAmount) {
+      result = result.filter(op => op.amount && op.amount >= filters.minAmount)
+    }
+
+    if (filters.search?.trim()) {
+      trackSearch(filters.search)
+      result = searchOpportunities(result, filters.search)
+      result = rankSearchResults(result, filters.search)
+    }
+
+    setFilteredOpportunities(result)
   }
-
-  if (filters.type !== 'all') result = result.filter(op => op.type === filters.type)
-
-  if (filters.province && filters.province !== 'all') {
-    result = result.filter(op => {
-      const scope = op.province_scope || []
-      return scope.includes('ALL') || scope.includes(filters.province)
-    })
-  }
-
-  if (filters.minAmount) {
-    result = result.filter(op => op.amount && op.amount >= filters.minAmount)
-  }
-
-  if (filters.search?.trim()) {
-    const term = filters.search.toLowerCase()
-    result = result.filter(op => [
-      op.title,
-      op.org_name,
-      op.description,
-      op.eligibility_notes,
-      ...(Array.isArray(op.interest_tags) ? op.interest_tags : []),
-      op.type,
-    ].some(field => field?.toLowerCase().includes(term)))
-  }
-
-  setFilteredOpportunities(result)
-}
 
   function getDaysUntilDeadline(deadline) {
     if (!deadline) return null
@@ -133,25 +141,19 @@ export default function Dashboard() {
   async function toggleSave(opportunityId) {
     const isSaved = saves.includes(opportunityId)
     if (isSaved) {
-      await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', opportunityId)
+      await unsaveOpportunity(user.id, opportunityId)
       setSaves(saves.filter(id => id !== opportunityId))
     } else {
-      await supabase.from('saves').insert({
-        user_id: user.id,
-        opportunity_id: opportunityId,
-        saved_at: new Date().toISOString(),
-      })
+      await saveOpportunity(user.id, opportunityId)
       const newSaves = [...saves, opportunityId]
       setSaves(newSaves)
 
-      // First save confetti
       const hasConfettied = localStorage.getItem('verto-first-save')
       if (!hasConfettied) {
         localStorage.setItem('verto-first-save', 'true')
         confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#f59e0b', '#fbbf24', '#3fb950', '#818cf8', '#e6edf3'] })
       }
 
-      // Badge check
       const newlyEarned = checkNewBadges({
         saveCount: newSaves.length,
         appCount: applications.length,
@@ -160,62 +162,40 @@ export default function Dashboard() {
         currentBadges: profile?.badges || [],
       })
       if (newlyEarned.length > 0) {
-        awardBadges(newlyEarned)
+        awardBadges(user.id, profile?.badges || [], newlyEarned)
+        setPendingBadge(newlyEarned[0])
       }
     }
   }
 
-  async function trackApplication(opportunityId) {
-    const { error } = await supabase
-      .from('applications')
-      .insert([{ user_id: user.id, opportunity_id: opportunityId }])
-      .select()
+  async function trackApplicationHelper(opportunityId) {
+    const { error } = await trackApplication(user.id, opportunityId)
 
     if (error) {
       setToast({ message: 'Failed to track application', type: 'error' })
       return
     }
 
-    const appliedAt = new Date()
-    await supabase
-      .from('save_metadata')
-      .upsert({ user_id: user.id, opportunity_id: opportunityId, applied_at: appliedAt.toISOString() }, { onConflict: 'user_id,opportunity_id' })
-
     const newApps = [...applications, opportunityId]
     setApplications(newApps)
     setToast({ message: 'Application tracked!', type: 'success' })
-
-    // Check speed demon — did they save this within the last 24hrs?
-    const { data: meta } = await supabase
-      .from('save_metadata')
-      .select('saved_at')
-      .eq('user_id', user.id)
-      .eq('opportunity_id', opportunityId)
-      .single()
-
-    const savedAt = meta?.saved_at ? new Date(meta.saved_at) : null
-    const speedDemon = savedAt ? (appliedAt - savedAt) < 86_400_000 : false
 
     const newlyEarned = checkNewBadges({
       saveCount: saves.length,
       appCount: newApps.length,
       hasAccepted: false,
-      speedDemon,
+      speedDemon: false,
       currentBadges: profile?.badges || [],
     })
     if (newlyEarned.length > 0) {
-      awardBadges(newlyEarned)
+      awardBadges(user.id, profile?.badges || [], newlyEarned)
+      setPendingBadge(newlyEarned[0])
     }
   }
 
-  async function awardBadges(newBadgeIds) {
-    const allBadges = [...new Set([...(profile?.badges || []), ...newBadgeIds])]
-    await supabase.from('profiles').update({ badges: allBadges }).eq('id', user.id)
-    // Show one notification at a time — queue if multiple
-    setPendingBadge(newBadgeIds[0])
+  async function handleLogView(opportunityId) {
+    await logView(user.id, opportunityId)
   }
-
-  async function logView(opportunityId) { await supabase.from('opportunity_views').insert({ user_id: user.id, opportunity_id: opportunityId }) }
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117' }}>
@@ -243,7 +223,7 @@ export default function Dashboard() {
       <ProfileCompletion profile={profile} />
 
       <OpportunityOfTheDay />
-      
+
       {/* Quick filters */}
       <div style={{ marginBottom: '20px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
         <span style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Quick</span>
@@ -255,7 +235,7 @@ export default function Dashboard() {
       </div>
 
       {opportunities.length > 0 && (
-        <RecommendedSection opportunities={opportunities} topN={3} saves={saves} applications={applications} onToggleSave={toggleSave} onLogView={logView} onTrackApplication={trackApplication} />
+        <RecommendedSection opportunities={opportunities} topN={3} saves={saves} applications={applications} onToggleSave={toggleSave} onLogView={handleLogView} onTrackApplication={trackApplicationHelper} />
       )}
 
       <YouMightHaveMissed />
@@ -286,7 +266,7 @@ export default function Dashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '14px' }}>
             {paginatedOpps.map(op => (
-              <OpportunityCard key={op.id} opportunity={op} isSaved={saves.includes(op.id)} isApplied={applications.includes(op.id)} onToggleSave={toggleSave} onLogView={logView} onTrackApplication={trackApplication} deadlineUrgency={getDeadlineUrgency(getDaysUntilDeadline(op.deadline))} />
+              <OpportunityCard key={op.id} opportunity={op} isSaved={saves.includes(op.id)} isApplied={applications.includes(op.id)} onToggleSave={toggleSave} onLogView={handleLogView} onTrackApplication={trackApplicationHelper} deadlineUrgency={getDeadlineUrgency(getDaysUntilDeadline(op.deadline))} />
             ))}
           </div>
 

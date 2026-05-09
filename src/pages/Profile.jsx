@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
+import { updateProfile } from '../lib/dbHelpers'
 import OnboardingProgress from '../components/OnboardingProgress'
 import { BadgeGrid } from '../components/Badges'
 import { useLocation } from 'react-router-dom'
 import MatchShareCard from '../components/MatchShareCard'
+import { supabase } from '../lib/supabase'
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -86,16 +87,44 @@ export default function Profile() {
   }
 
   async function handleSave() {
-    setLoading(true)
-    await supabase.from('profiles').update({
-      full_name: form.full_name, grade: parseInt(form.grade), province: form.province,
-      interests: form.interests, gpa_range: form.gpa_range, financial_need: form.financial_need,
-      email_alerts: form.email_alerts, updated_at: new Date().toISOString(),
-    }).eq('id', user.id)
-    if (refreshProfile) await refreshProfile()
-    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500)
-    if (isNewUser) setShowShareCard(true)
+  const { validateProfile } = require('../lib/validation')
+  
+  const validation = validateProfile({
+    full_name: form.full_name,
+    grade: form.grade ? parseInt(form.grade) : null,
+    province: form.province,
+    interests: form.interests,
+    gpa_range: form.gpa_range,
+  })
+  
+  if (!validation.valid) {
+    setToast({ message: validation.errors[0], type: 'error' })
+    return
   }
+  
+  setLoading(true)
+  const { error } = await updateProfile(user.id, {
+    full_name: form.full_name,
+    grade: parseInt(form.grade),
+    province: form.province,
+    interests: form.interests,
+    gpa_range: form.gpa_range,
+    financial_need: form.financial_need,
+    email_alerts: form.email_alerts,
+  })
+  
+  if (error) {
+    setToast({ message: 'Failed to save profile', type: 'error' })
+    setLoading(false)
+    return
+  }
+  
+  if (refreshProfile) await refreshProfile()
+  setLoading(false)
+  setSaved(true)
+  setTimeout(() => setSaved(false), 2500)
+  if (isNewUser) setShowShareCard(true)
+}
 
   const inputStyle = (name) => ({
     padding: '11px 14px', borderRadius: '8px', border: `1px solid ${focused === name ? 'rgba(245,158,11,0.4)' : 'rgba(255,255,255,0.08)'}`,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import OutcomeModal from '../components/OutcomeModal'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
+import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getOpportunities, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections } from '../lib/dbHelpers'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
@@ -45,12 +45,12 @@ export default function Saves() {
   }, [])
 
   async function fetchSavedOpportunities() {
-    const { data: saves } = await supabase.from('saves').select('opportunity_id').eq('user_id', user.id)
+    const { data: saves } = await getSaves(user.id)
     if (!saves || saves.length === 0) { setSavedOpportunities([]); setLoading(false); return }
 
     const ids = saves.map(s => s.opportunity_id)
     const { data: opportunities } = await supabase.from('opportunities').select('*').in('id', ids).eq('is_active', true)
-    const { data: collectionMappings } = await supabase.from('opportunity_collections').select('opportunity_id, collection_id').eq('user_id', user.id)
+    const { data: collectionMappings } = await getOpportunityCollections(user.id)
 
     const oppsWithCollections = (opportunities || []).map(opp => ({
       ...opp,
@@ -69,20 +69,32 @@ export default function Saves() {
     setLoading(false)
   }
 
-  async function toggleSave(id) { await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', id); setSavedOpportunities(prev => prev.filter(op => op.id !== id)) }
-  async function logView(id) { await supabase.from('opportunity_views').insert({ user_id: user.id, opportunity_id: id }) }
-  async function fetchMetadata() { const { data } = await supabase.from('save_metadata').select('*').eq('user_id', user.id); const m = {}; data?.forEach(d => { m[d.opportunity_id] = d }); setMetadata(m) }
-  async function fetchCollections() { const { data } = await supabase.from('collections').select('*').eq('user_id', user.id).order('created_at', { ascending: true }); setCollections(data || []) }
-
+  async function toggleSave(id) {
+  await unsaveOpportunity(user.id, id)
+  setSavedOpportunities(prev => prev.filter(op => op.id !== id))
+}
+async function handleLogView(id) { 
+  const { logView } = require('../lib/dbHelpers')
+  await logView(user.id, id) 
+}
+async function fetchMetadata() { 
+  const { data } = await getSaveMetadata(user.id)
+  const m = {}
+  data?.forEach(d => { m[d.opportunity_id] = d })
+  setMetadata(m) 
+}
+async function fetchCollections() { 
+  const { data } = await getCollections(user.id)
+  setCollections(data || []) 
+}
   async function createCollection() {
     if (!newCollectionName.trim()) return
-    const { data, error } = await supabase.from('collections').insert({ user_id: user.id, name: newCollectionName }).select()
-    if (!error) { setCollections([...collections, data[0]]); setNewCollectionName(''); setShowNewCollection(false) }
+    const { data, error } = await dbCreateCollection(user.id, newCollectionName)
+    if (!error && data) { setCollections([...collections, data]); setNewCollectionName(''); setShowNewCollection(false) }
   }
 
   async function deleteCollection(id) {
-    await supabase.from('opportunity_collections').delete().eq('collection_id', id)
-    await supabase.from('collections').delete().eq('id', id)
+    await dbDeleteCollection(user.id, id)
     setCollections(collections.filter(c => c.id !== id))
     if (selectedCollection === id) setSelectedCollection('all')
   }
@@ -90,34 +102,31 @@ export default function Saves() {
   async function awardBadgesInSaves(newBadgeIds) {
     const { data: prof } = await supabase.from('profiles').select('badges').eq('id', user.id).single()
     const allBadges = [...new Set([...(prof?.badges || []), ...newBadgeIds])]
-    await supabase.from('profiles').update({ badges: allBadges }).eq('id', user.id)
+    const { awardBadges } = require('../lib/dbHelpers')
+    await awardBadges(user.id, prof?.badges || [], newBadgeIds)
     setPendingBadge(newBadgeIds[0])
   }
 
   async function moveToCollection(oppId, collId) {
     if (!collId) return
-    const { error } = await supabase.from('opportunity_collections').insert({ user_id: user.id, opportunity_id: oppId, collection_id: collId })
+    const { error } = await addToCollection(user.id, oppId, collId)
     if (!error) setSavedOpportunities(prev => prev.map(op => op.id === oppId ? { ...op, collection_ids: [...(op.collection_ids || []), collId] } : op))
   }
 
-  async function removeFromAllCollections(oppId) {
-    await supabase.from('opportunity_collections').delete().eq('opportunity_id', oppId).eq('user_id', user.id)
+  async function handleRemoveFromAllCollections(oppId) {
+    await removeFromAllCollections(user.id, oppId)
     setSavedOpportunities(prev => prev.map(op => op.id === oppId ? { ...op, collection_ids: [] } : op))
   }
 
-  async function updateNote(oppId, note) {
-    const existing = metadata[oppId]
-    if (existing) await supabase.from('save_metadata').update({ notes: note }).eq('id', existing.id)
-    else await supabase.from('save_metadata').insert({ user_id: user.id, opportunity_id: oppId, notes: note })
-    setMetadata({ ...metadata, [oppId]: { ...(metadata[oppId] || {}), notes: note } })
-  }
+async function updateNote(oppId, note) {
+  await upsertSaveMetadata(user.id, oppId, { notes: note })
+  setMetadata({ ...metadata, [oppId]: { ...(metadata[oppId] || {}), notes: note } })
+}
 
   async function updateApplicationStatus(oppId, status) {
-    const existing = metadata[oppId]
-    const payload = { application_status: status, status_updated_at: new Date().toISOString() }
-    if (existing) await supabase.from('save_metadata').update(payload).eq('id', existing.id)
-    else await supabase.from('save_metadata').insert({ user_id: user.id, opportunity_id: oppId, ...payload })
-    setMetadata({ ...metadata, [oppId]: { ...(metadata[oppId] || {}), ...payload } })
+  const statusUpdatedAt = new Date().toISOString()
+  await upsertSaveMetadata(user.id, oppId, { application_status: status, status_updated_at: statusUpdatedAt })
+  setMetadata({ ...metadata, [oppId]: { ...(metadata[oppId] || {}), application_status: status, status_updated_at: statusUpdatedAt } })
 
     if (status === 'accepted') {
       fireConfetti()
@@ -136,17 +145,15 @@ export default function Saves() {
   async function toggleArchive(oppId) {
     const existing = metadata[oppId]
     const newStatus = !existing?.is_archived
-    if (existing) await supabase.from('save_metadata').update({ is_archived: newStatus }).eq('id', existing.id)
-    else await supabase.from('save_metadata').insert({ user_id: user.id, opportunity_id: oppId, is_archived: newStatus })
+    await upsertSaveMetadata(user.id, oppId, { is_archived: newStatus })
     setMetadata({ ...metadata, [oppId]: { ...(metadata[oppId] || {}), is_archived: newStatus } })
   }
 
   async function bulkDelete() {
-    for (const id of selectedOpportunities) await supabase.from('saves').delete().eq('user_id', user.id).eq('opportunity_id', id)
-    setSavedOpportunities(prev => prev.filter(op => !selectedOpportunities.has(op.id)))
-    setSelectedOpportunities(new Set()); setShowDeleteConfirm(false)
-  }
-
+      for (const id of selectedOpportunities) await unsaveOpportunity(user.id, id)
+      setSavedOpportunities(prev => prev.filter(op => !selectedOpportunities.has(op.id)))
+      setSelectedOpportunities(new Set()); setShowDeleteConfirm(false)
+    }
   function toggleSelectOpportunity(id) {
     const s = new Set(selectedOpportunities)
     if (s.has(id)) s.delete(id); else s.add(id)
@@ -412,7 +419,7 @@ export default function Saves() {
                       {isArchived && <span style={{ padding: '2px 8px', borderRadius: '5px', fontSize: '10px', fontWeight: '600', backgroundColor: 'rgba(248,81,73,0.1)', color: '#f85149' }}>📦 Archived</span>}
                     </div>
 
-                    <OpportunityCard opportunity={op} isSaved={true} onToggleSave={toggleSave} onLogView={logView} />
+                    <OpportunityCard opportunity={op} isSaved={true} onToggleSave={toggleSave} onLogView={handleLogView} />
 
                     {/* Action bar */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', borderTop: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)', gap: '8px' }}>
@@ -443,9 +450,9 @@ export default function Saves() {
                       <div style={{ padding: '12px', borderTop: '1px solid rgba(255,255,255,0.05)', backgroundColor: 'rgba(255,255,255,0.02)' }}>
                         <span style={{ display: 'block', fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '8px' }}>Move to collection</span>
                         <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                          <button onClick={() => { removeFromAllCollections(op.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(248,81,73,0.2)', backgroundColor: 'rgba(248,81,73,0.06)', color: '#f85149', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>Remove from all</button>
+                          <button onClick={() => { handleRemoveFromAllCollections(op.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(248,81,73,0.2)', backgroundColor: 'rgba(248,81,73,0.06)', color: '#f85149', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>Remove from all</button>
                           {collections.map(c => (
-                            <button key={c.id} onClick={() => { moveToCollection(op.id, c.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', color: '#e6edf3', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>{c.name}</button>
+                            <button key={c.id} onClick={() => { handleMoveToCollection(op.id, c.id); setShowMoveModal(false); setOpportunityToMove(null) }} style={{ padding: '4px 10px', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: 'rgba(255,255,255,0.03)', color: '#e6edf3', fontSize: '11px', cursor: 'pointer', fontFamily: 'inherit' }}>{c.name}</button>
                           ))}
                         </div>
                         <button onClick={() => { setShowMoveModal(false); setOpportunityToMove(null) }} style={{ fontSize: '11px', color: '#484f58', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Cancel</button>
