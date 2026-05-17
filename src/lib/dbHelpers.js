@@ -91,7 +91,7 @@ export async function getSaves(userId) {
     const cached = getCached(`saves:${userId}`)
     if (cached) return { data: cached, error: null }
     const { data, error } = await retryWithBackoff(() =>
-      supabase.from('saves').select('opportunity_id, created_at').eq('user_id', userId)
+    supabase.from('saves').select('user_id, opportunity_id, created_at').eq('user_id', userId)
     )
     if (error) {
       const offline = await getAllFromOffline('saves')
@@ -112,7 +112,7 @@ export async function saveOpportunity(userId, opportunityId) {
       await retryWithBackoff(() => supabase.from('saves').insert({ user_id: userId, opportunity_id: opportunityId, saved_at: savedAt }))
       await retryWithBackoff(() => supabase.from('save_metadata').upsert({ user_id: userId, opportunity_id: opportunityId, saved_at: savedAt }, { onConflict: 'user_id,opportunity_id' }))
       clearCache(`saves:${userId}`); clearCache('analytics')
-      analyticsTrackApplication(opportunityId)
+      trackSave(opportunityId)
       return { error: null }
     } catch (err) { return handleError(err, 'saveOpportunity') }
   }, 'high')
@@ -146,7 +146,7 @@ export async function getSaveMetadata(userId) {
       const offline = await getAllFromOffline('metadata')
       return { data: offline || [], error: null }
     }
-    const decrypted = data?.map(item => ({ ...item, notes: item.notes ? decryptNotes(item.notes) : item.notes })) || []
+    const decrypted = await Promise.all((data || []).map(async item => ({ ...item, notes: item.notes ? await decryptNotes(item.notes) : item.notes })))
     if (decrypted) { setCache(`metadata:${userId}`, decrypted); await saveArrayToOffline('metadata', decrypted) }
     return { data: decrypted, error: null }
   } catch (err) { return handleError(err, 'getSaveMetadata') }
@@ -156,12 +156,12 @@ export async function upsertSaveMetadata(userId, opportunityId, updates) {
   return queueRequest(async () => {
     try {
       if (!userId || !opportunityId) throw new Error('User ID and Opportunity ID required')
-      const updatePayload = { ...updates, notes: updates.notes ? encryptNotes(updates.notes) : updates.notes, updated_at: new Date().toISOString() }
+      const updatePayload = { ...updates, notes: updates.notes ? await encryptNotes(updates.notes) : updates.notes, updated_at: new Date().toISOString() }
       const { data, error } = await retryWithBackoff(() =>
         supabase.from('save_metadata').upsert({ user_id: userId, opportunity_id: opportunityId, ...updatePayload }, { onConflict: 'user_id,opportunity_id' }).select().single()
       )
       if (error) return handleError(error, 'upsertSaveMetadata')
-      const decrypted = data ? { ...data, notes: data.notes ? decryptNotes(data.notes) : data.notes } : data
+      const decrypted = data ? { ...data, notes: data.notes ? await decryptNotes(data.notes) : data.notes } : data
       clearCache(`metadata:${userId}`); clearCache('analytics')
       return { data: decrypted, error: null }
     } catch (err) { return handleError(err, 'upsertSaveMetadata') }
@@ -178,7 +178,7 @@ export async function getApplications(userId) {
     const cached = getCached(`applications:${userId}`)
     if (cached) return { data: cached, error: null }
     const { data, error } = await retryWithBackoff(() =>
-      supabase.from('applications').select('opportunity_id, created_at, applied_at').eq('user_id', userId)
+    supabase.from('applications').select('user_id, opportunity_id, created_at, applied_at').eq('user_id', userId)
     )
     if (error) {
       const offline = await getAllFromOffline('applications')
@@ -199,7 +199,7 @@ export async function trackApplication(userId, opportunityId) {
       await retryWithBackoff(() => supabase.from('applications').insert({ user_id: userId, opportunity_id: opportunityId, applied_at: appliedAt }))
       await retryWithBackoff(() => supabase.from('save_metadata').upsert({ user_id: userId, opportunity_id: opportunityId, applied_at: appliedAt, is_applied: true, application_status: 'applied' }, { onConflict: 'user_id,opportunity_id' }))
       clearCache(`applications:${userId}`); clearCache(`metadata:${userId}`); clearCache('analytics')
-      analyticsTrackApplication(opportunityId)
+      trackSave(opportunityId)
       return { error: null }
     } catch (err) { return handleError(err, 'trackApplication') }
   }, 'high')
@@ -347,7 +347,7 @@ export async function getAnalytics(userId) {
       retryWithBackoff(() => supabase.from('applications').select('opportunity_id, created_at, applied_at').eq('user_id', userId)),
       retryWithBackoff(() => supabase.from('save_metadata').select('*').eq('user_id', userId)),
     ])
-    const decryptedMeta = (metaRes.data || []).map(item => ({ ...item, notes: item.notes ? decryptNotes(item.notes) : item.notes }))
+    const decryptedMeta = await Promise.all((metaRes.data || []).map(async item => ({ ...item, notes: item.notes ? await decryptNotes(item.notes) : item.notes })))
     const result = { views: viewsRes.data || [], saves: savesRes.data || [], applications: appsRes.data || [], metadata: decryptedMeta, error: null }
     setCache(`analytics:${userId}`, result, 2 * 60 * 1000)
     return result

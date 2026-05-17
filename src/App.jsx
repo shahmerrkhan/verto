@@ -73,17 +73,17 @@ function App() {
           <Route path="/articles/:id" element={<ArticleDetail />} />
           <Route path="/opportunities/:id" element={<ProtectedRoute><OpportunityDetail /></ProtectedRoute>} />
           <Route path="/research" element={<Research />} />
-          <Route path="/admin/articles" element={<ProtectedRoute><AdminArticles /></ProtectedRoute>} />
-          <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+          <Route path="/admin/articles" element={<ProtectedRoute adminOnly><AdminArticles /></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly><Admin /></ProtectedRoute>} />
           <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
           <Route path="/for-organizers" element={<ForOrganizers />} />
           <Route path="/mentors" element={<Mentors />} />
         </Routes>
         <MobileNav />
-      <BackToTop />
-      <ShortcutManager />
-      {user && <UrgentNudge />}
-    </BrowserRouter>
+        <BackToTop />
+        <ShortcutManager />
+        {user && <UrgentNudge />}
+      </BrowserRouter>
   </ThemeProvider>
   )
 }

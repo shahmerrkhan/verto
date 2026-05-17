@@ -5,7 +5,7 @@ import { encryptNotes, decryptNotes } from './encryption'
 import { logError } from './monitoring'
 import { saveArrayToOffline, getAllFromOffline, isOnline } from './offlineSupport'
 import { queueRequest } from './requestQueuing'
-import { trackSave, trackApplication, trackSearch } from './analytics'
+import { trackSave, trackApplication as trackApplicationEvent, trackSearch } from './analytics'
 import { checkServerRateLimit } from './serverRateLimit'
 
 
@@ -259,7 +259,7 @@ export async function getSaveMetadata(userId) {
     
     const decrypted = data?.map(item => ({
       ...item,
-      notes: item.notes ? decryptNotes(item.notes) : item.notes
+      notes: item.notes ? await decryptNotes(item.notes) : item.notes
     })) || []
     
     if (decrypted) {
@@ -279,7 +279,7 @@ export async function upsertSaveMetadata(userId, opportunityId, updates) {
       
       const updatePayload = {
         ...updates,
-        notes: updates.notes ? encryptNotes(updates.notes) : updates.notes,
+        notes: updates.notes ? await encryptNotes(updates.notes) : updates.notes,
         updated_at: new Date().toISOString()
       }
       
@@ -369,7 +369,7 @@ export async function trackApplication(userId, opportunityId) {
       clearCache(`applications:${userId}`)
       clearCache(`metadata:${userId}`)
       clearCache('analytics')
-      trackApplication(opportunityId)
+      trackApplicationEvent(opportunityId)
       return { error: null }
     } catch (err) {
       return handleError(err, 'trackApplication')
@@ -632,7 +632,7 @@ export async function getAnalytics(userId) {
     
     const decryptedMeta = (metaRes.data || []).map(item => ({
       ...item,
-      notes: item.notes ? decryptNotes(item.notes) : item.notes
+      notes: item.notes ? await decryptNotes(item.notes) : item.notes
     }))
     
     const result = {

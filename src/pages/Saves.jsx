@@ -46,12 +46,15 @@ export default function Saves() {
   }, [])
 
   async function fetchSavedOpportunities() {
-    const { data: saves } = await getSaves(user.id)
+    const [{ data: saves }, { data: collectionMappings }] = await Promise.all([
+      getSaves(user.id),
+      getOpportunityCollections(user.id)
+    ])
+
     if (!saves || saves.length === 0) { setSavedOpportunities([]); setLoading(false); return }
 
     const ids = saves.map(s => s.opportunity_id)
     const { data: opportunities } = await supabase.from('opportunities').select('*').in('id', ids).eq('is_active', true)
-    const { data: collectionMappings } = await getOpportunityCollections(user.id)
 
     const oppsWithCollections = (opportunities || []).map(opp => ({
       ...opp,

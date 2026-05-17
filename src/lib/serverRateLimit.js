@@ -5,8 +5,10 @@ const FUNCTION_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/rate-lim
 export async function checkServerRateLimit(action) {
   try {
     const { data: { session } } = await supabase.auth.getSession()
-    if (!session) return { allowed: true }
-
+  if (!session) return { allowed: true }
+      
+  // In development, skip the rate limit check entirely
+  if (import.meta.env.DEV) return { allowed: true }
     const response = await fetch(FUNCTION_URL, {
       method: 'POST',
       headers: {
