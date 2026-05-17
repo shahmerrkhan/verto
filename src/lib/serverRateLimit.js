@@ -7,7 +7,6 @@ export async function checkServerRateLimit(action) {
     const { data: { session } } = await supabase.auth.getSession()
   if (!session) return { allowed: true }
       
-  // In development, skip the rate limit check entirely
     const response = await fetch(FUNCTION_URL, {
       method: 'POST',
       headers: {
