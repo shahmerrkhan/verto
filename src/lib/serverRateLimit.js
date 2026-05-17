@@ -8,7 +8,6 @@ export async function checkServerRateLimit(action) {
   if (!session) return { allowed: true }
       
   // In development, skip the rate limit check entirely
-  if (import.meta.env.DEV) return { allowed: true }
     const response = await fetch(FUNCTION_URL, {
       method: 'POST',
       headers: {
