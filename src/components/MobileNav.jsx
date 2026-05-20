@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { COMPONENT, COLORS } from '../config/responsive'
 import { useAuth } from '../context/AuthContext'
 import { useState, useEffect } from 'react'
 
@@ -36,7 +37,7 @@ export default function MobileNav() {
     <>
       <div style={{ height: '72px', display: 'block' }} className="mobile-nav-spacer" />
       <nav className="mobile-bottom-nav" style={{
-        position: 'fixed', bottom: 0, left: 0, right: 0, height: '64px',
+        position: 'fixed', bottom: 0, left: 0, right: 0, height: COMPONENT.nav.mobileHeight,
         backgroundColor: 'rgba(13,17,23,0.97)', backdropFilter: 'blur(16px)',
         borderTop: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-around',

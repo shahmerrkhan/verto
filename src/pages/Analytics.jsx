@@ -4,9 +4,11 @@ import { useAuth } from '../context/AuthContext'
 import { getAnalytics } from '../lib/dbHelpers'
 import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
+import { useResponsive } from '../config/responsive'
 
 export default function Analytics() {
   const { user } = useAuth()
+  const { isMobile } = useResponsive()
   const [stats, setStats] = useState({ totalViews: 0, totalSaves: 0, totalApps: 0, avgTimeToApply: 0 })
   const [recentActivity, setRecentActivity] = useState([])
   const [loading, setLoading] = useState(true)
@@ -75,14 +77,14 @@ export default function Analytics() {
   )
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ marginBottom: '32px' }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', margin: '0 0 6px 0', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Your analytics</h1>
         <p style={{ fontSize: '14px', color: '#7d8590', margin: 0 }}>Track your progress and activity</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: '16px', marginBottom: '32px' }}>
-        {[
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fit, minmax(min(240px, 100%), 1fr))', gap: isMobile ? '10px' : '16px', marginBottom: '32px' }}>
+          {[
           { label: 'Total views', value: stats.totalViews, icon: '👁️' },
           { label: 'Saved', value: stats.totalSaves, icon: '💾' },
           { label: 'Applied', value: stats.totalApps, icon: '✓' },
@@ -109,7 +111,7 @@ export default function Analytics() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ fontSize: '13px', fontWeight: '600', color: '#e6edf3', margin: '0 0 2px' }}>{activityConfig[item.type].label}</p>
-                  <p style={{ fontSize: '12px', color: '#7d8590', margin: '0 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '220px' }}>{item.title}</p>
+                  <p style={{ fontSize: '12px', color: '#7d8590', margin: '0 0 2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: isMobile ? '160px' : '220px' }}>{item.title}</p>
                   <p style={{ fontSize: '11px', color: '#484f58', margin: 0 }}>{new Date(item.date).toLocaleDateString('en-CA')}</p>
                 </div>
               </div>

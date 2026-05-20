@@ -45,6 +45,19 @@ export default function OpportunityModal({ opportunity, isSaved, onToggleSave, o
   }, [])
 
   useEffect(() => {
+    function handleResize() {
+      const modal = document.querySelector('.modal-scroll')
+      if (modal && window.innerWidth < 640) {
+        modal.style.maxWidth = '100%'
+        modal.style.borderRadius = '16px 16px 0 0'
+      }
+    }
+    handleResize()
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  useEffect(() => {
     async function fetchSimilar() {
       const { data } = await supabase
         .from('opportunities')
@@ -97,9 +110,9 @@ export default function OpportunityModal({ opportunity, isSaved, onToggleSave, o
         style={{
           backgroundColor: '#161b22',
           border: '1px solid rgba(255,255,255,0.09)',
-          borderRadius: '18px',
+          borderRadius: window.innerWidth < 640 ? '16px 16px 0 0' : '18px',
           width: '100%',
-          maxWidth: '620px',
+          maxWidth: window.innerWidth < 640 ? '100%' : '620px',
           maxHeight: '90vh',
           overflowY: 'auto',
           boxShadow: '0 32px 80px rgba(0,0,0,0.7)',

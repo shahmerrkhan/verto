@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { useResponsive } from '../config/responsive'
 
 export default function OpportunityOfTheDay() {
+  const { isMobile } = useResponsive()
   const [opp, setOpp] = useState(null)
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -47,7 +49,7 @@ export default function OpportunityOfTheDay() {
         background: `linear-gradient(135deg, ${tc.bg} 0%, rgba(13,17,23,0) 60%), #161b22`,
         border: `1px solid ${tc.border}`,
         borderRadius: '16px',
-        padding: '24px 28px',
+        padding: isMobile ? '16px' : '24px 28px',
         marginBottom: '28px',
         position: 'relative',
         overflow: 'hidden',
@@ -70,8 +72,8 @@ export default function OpportunityOfTheDay() {
             <span style={{ fontSize: '12px', color: '#484f58' }}>{tc.icon} {opp.type}</span>
           </div>
 
-          <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#e6edf3', margin: '0 0 6px', lineHeight: 1.3, letterSpacing: '-0.4px', fontFamily: "'Syne', sans-serif" }}>
-            {opp.title}
+<h2 style={{ fontSize: isMobile ? '16px' : '20px', fontWeight: '800', color: '#e6edf3', margin: '0 0 6px', lineHeight: 1.3, letterSpacing: '-0.4px', fontFamily: "'Syne', sans-serif" }}>
+              {opp.title}
           </h2>
           <p style={{ fontSize: '13px', color: '#7d8590', margin: '0 0 14px', fontWeight: '500' }}>{opp.org_name}</p>
 
@@ -97,8 +99,8 @@ export default function OpportunityOfTheDay() {
         </div>
 
         {/* Big icon */}
-        <div style={{ width: '64px', height: '64px', borderRadius: '16px', backgroundColor: tc.bg, border: `1px solid ${tc.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>
-          {tc.icon}
+<div style={{ width: isMobile ? '48px' : '64px', height: isMobile ? '48px' : '64px', borderRadius: '16px', backgroundColor: tc.bg, border: `1px solid ${tc.border}`, display: isMobile ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>
+            {tc.icon}
         </div>
       </div>
     </div>

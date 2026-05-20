@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
+import { useResponsive } from '../config/responsive'
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -7,6 +8,7 @@ export default function Landing() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [scrollY, setScrollY] = useState(0)
   const [visibleSections, setVisibleSections] = useState(new Set())
+  const { isMobile, isTablet, isDesktop } = useResponsive()
 
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY })
@@ -94,7 +96,7 @@ export default function Landing() {
             </svg>
             <span style={{ fontSize: '20px', fontWeight: '800', color: '#e6edf3', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>verto</span>
           </div>
-          <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+            <div style={{ display: isMobile || isTablet ? 'none' : 'flex', gap: '6px', alignItems: 'center' }}>
             <button className="nav-link" onClick={() => navigate('/for-organizers')} style={{ padding: '8px 14px', background: 'none', border: 'none', color: '#7d8590', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'color 0.15s' }}>For Organizers</button>
             <button className="btn-ghost" onClick={() => navigate('/login')} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>Sign in</button>
             <button className="btn-primary" onClick={() => navigate('/signup')} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>Get started</button>
@@ -103,7 +105,7 @@ export default function Landing() {
       </nav>
 
       {/* Hero */}
-      <section ref={heroRef} style={{ position: 'relative', zIndex: 1, maxWidth: '1140px', margin: '0 auto', padding: '140px 24px 100px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '80px', alignItems: 'center' }}>
+        <section ref={heroRef} style={{ position: 'relative', zIndex: 1, maxWidth: '1140px', margin: '0 auto', padding: 'clamp(80px, 15vw, 140px) 24px clamp(60px, 10vw, 100px)', display: 'grid', gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 1fr', gap: isMobile || isTablet ? '40px' : '80px', alignItems: 'center' }}>
 
         {/* Left */}
         <div style={{ animation: 'fadeUp 0.8s cubic-bezier(0.16,1,0.3,1) both' }}>
@@ -123,11 +125,11 @@ export default function Landing() {
             Scholarships, competitions, internships, programs — ranked by AI to match your grade, province, and interests. No noise. No irrelevant results.
           </p>
 
-          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <button className="btn-primary" onClick={() => navigate('/signup')} style={{ padding: '14px 28px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.1px' }}>
+          <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', alignItems: isMobile ? 'stretch' : 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
+            <button className="btn-primary" onClick={() => navigate('/signup')} style={{ padding: '14px 28px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.1px', width: isMobile ? '100%' : 'auto' }}>
               Find my opportunities →
             </button>
-            <button className="btn-ghost" onClick={() => navigate('/login')} style={{ padding: '14px 22px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
+              <button className="btn-ghost" onClick={() => navigate('/login')} style={{ padding: '14px 22px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', width: isMobile ? '100%' : 'auto' }}>
               Sign in
             </button>
           </div>
@@ -135,8 +137,8 @@ export default function Landing() {
           <p style={{ fontSize: '12px', color: '#484f58', margin: 0 }}>Free · No credit card · 2 minutes to set up</p>
 
           {/* Trust bar */}
-          <div style={{ display: 'flex', gap: '20px', marginTop: '40px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-            {[['400+', 'opportunities'], ['AI', 'ranked by fit'], ['🇨🇦', 'Canada-only']].map(([val, label], i) => (
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: isMobile ? '16px' : '20px', marginTop: '40px', paddingTop: '32px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              {[['400+', 'opportunities'], ['AI', 'ranked by fit'], ['🇨🇦', 'Canada-only']].map(([val, label], i) => (
               <div key={i}>
                 <div style={{ fontSize: '18px', fontWeight: '800', color: '#e6edf3', fontFamily: "'Syne', sans-serif", letterSpacing: '-0.5px' }}>{val}</div>
                 <div style={{ fontSize: '11px', color: '#484f58', fontWeight: '500', marginTop: '2px' }}>{label}</div>
@@ -145,8 +147,9 @@ export default function Landing() {
           </div>
         </div>
 
+        
         {/* Right — cards */}
-        <div style={{ position: 'relative', animation: 'fadeUp 0.8s 0.15s cubic-bezier(0.16,1,0.3,1) both' }}>
+          <div style={{ position: 'relative', animation: 'fadeUp 0.8s 0.15s cubic-bezier(0.16,1,0.3,1) both', display: isMobile || isTablet ? 'none' : 'block' }}>
           {/* Glow behind cards */}
           <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '300px', height: '300px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,158,11,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
 
@@ -198,7 +201,7 @@ export default function Landing() {
             <p style={{ fontSize: '15px', color: '#7d8590', lineHeight: 1.7, margin: '0 0 64px 0', maxWidth: '480px' }}>Most platforms show you everything and let you figure it out. Verto does the work for you.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '1px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : isMobile || isTablet ? 'repeat(2, 1fr)' : 'repeat(3, 1fr)', gap: '1px', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: '20px', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}>
             {features.map((f, i) => (
               <div key={i} className={`feature-card reveal ${inView('features') ? 'visible' : ''}`} data-section="features" style={{ padding: '32px', backgroundColor: '#0b0f14', transitionDelay: `${i * 0.07}s` }}>
                 <div style={{ fontSize: '26px', marginBottom: '16px' }}>{f.icon}</div>
@@ -272,8 +275,8 @@ export default function Landing() {
               </div>
               <p style={{ fontSize: '13px', color: '#484f58', margin: 0, maxWidth: '260px', lineHeight: 1.6 }}>Connecting Canadian students to opportunities that matter.</p>
             </div>
-            <div style={{ display: 'flex', gap: '48px', flexWrap: 'wrap' }}>
-              <div>
+              <div style={{ display: 'flex', gap: isMobile ? '24px' : '48px', flexWrap: 'wrap' }}>
+                <div>
                 <p style={{ fontSize: '11px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', margin: '0 0 12px 0' }}>Platform</p>
                 {['Dashboard', 'Saved', 'Analytics', 'Profile'].map(link => (
                   <a key={link} href={`/${link.toLowerCase()}`} style={{ display: 'block', fontSize: '13px', color: '#7d8590', textDecoration: 'none', fontWeight: '500', marginBottom: '8px', transition: 'color 0.15s' }}

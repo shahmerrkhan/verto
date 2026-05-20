@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
+import { useResponsive } from '../config/responsive'
 import { useNavigate, Link } from 'react-router-dom'
 
 export default function Signup() {
+  const { isMobile } = useResponsive()
   const { signUp } = useAuth()
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
@@ -21,8 +23,8 @@ export default function Signup() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', padding: '24px', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeSlideIn 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
+<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', padding: isMobile ? '16px' : '24px', fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeSlideIn 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '24px' }}>
             <svg width="32" height="32" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
@@ -36,7 +38,7 @@ export default function Signup() {
           <p style={{ fontSize: '14px', color: '#7d8590' }}>Find opportunities matched to you</p>
         </div>
 
-        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '32px' }}>
+        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: isMobile ? '20px 16px' : '32px' }}>
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             {[{ name: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com', value: email, onChange: e => setEmail(e.target.value) },
               { name: 'password', label: 'Password', type: 'password', placeholder: '••••••••', value: password, onChange: e => setPassword(e.target.value) }
@@ -49,7 +51,7 @@ export default function Signup() {
               </div>
             ))}
             {error && <div style={{ padding: '11px 14px', backgroundColor: 'rgba(248,81,73,0.1)', border: '1px solid rgba(248,81,73,0.2)', borderRadius: '8px', color: '#f85149', fontSize: '13px' }}>{error}</div>}
-            <button type="submit" disabled={loading} style={{ marginTop: '4px', padding: '13px 16px', borderRadius: '10px', backgroundColor: loading ? '#1c2330' : '#f59e0b', color: loading ? '#484f58' : '#0d1117', fontSize: '14px', fontWeight: '700', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' }}>
+            <button type="submit" disabled={loading} style={{ marginTop: '4px', padding: '13px 16px', minHeight: '44px', borderRadius: '10px', backgroundColor: loading ? '#1c2330' : '#f59e0b', color: loading ? '#484f58' : '#0d1117', fontSize: '14px', fontWeight: '700', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' }}>
               {loading ? 'Creating account...' : 'Create account →'}
             </button>
           </form>

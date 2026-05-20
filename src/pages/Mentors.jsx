@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
+import { useResponsive } from '../config/responsive'
 
 const SKILLS = [
   'Essay Writing', 'Interview Prep', 'Research Methods', 'Coding & Algorithms',
@@ -19,6 +20,7 @@ const INTEREST_TAGS = [
 ]
 
 export default function Mentors() {
+  const { isMobile } = useResponsive()
   const [form, setForm] = useState({
     full_name: '',
     email: '',
@@ -103,15 +105,14 @@ export default function Mentors() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0d1117', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ maxWidth: '720px', margin: '0 auto', padding: '96px 24px 80px' }}>
-
+<div style={{ maxWidth: '720px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px' }}>
         {/* Header */}
         <div style={{ marginBottom: '40px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '20px', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', marginBottom: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>Become a Mentor</span>
           </div>
-          <h1 style={{ fontSize: '28px', fontWeight: '800', color: '#e6edf3', margin: '0 0 12px', fontFamily: "'Syne', sans-serif", lineHeight: 1.2 }}>
-            Host a session.<br />Help students win.
+<h1 style={{ fontSize: isMobile ? '22px' : '28px', fontWeight: '800', color: '#e6edf3', margin: '0 0 12px', fontFamily: "'Syne', sans-serif", lineHeight: 1.2 }}>
+              Host a session.<br />Help students win.
           </h1>
           <p style={{ fontSize: '14px', color: '#7d8590', margin: 0, lineHeight: 1.6, maxWidth: '520px' }}>
             Share a skill, host a 30-60 minute group session, and help Canadian students land scholarships, competitions, and programs. You set the topic, the time, and the platform. We bring the students.
@@ -119,8 +120,8 @@ export default function Mentors() {
         </div>
 
         {/* How it works */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '40px' }}>
-          {[
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '12px', marginBottom: '40px' }}>
+            {[
             { icon: '📝', title: 'Apply', desc: 'Fill out this form. We review and approve within 48 hours.' },
             { icon: '🗓️', title: 'Schedule', desc: 'Pick a topic, set a date, and share your meeting link.' },
             { icon: '🎯', title: 'Impact', desc: 'Students who need your session get notified automatically.' },
@@ -140,13 +141,14 @@ export default function Mentors() {
             <p style={{ fontSize: '14px', color: '#7d8590', margin: 0 }}>We'll review your application and get back to you at {form.email} within 48 hours.</p>
           </div>
         ) : (
-          <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#e6edf3', margin: 0, fontFamily: "'Syne', sans-serif" }}>Your application</h2>
+<div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: isMobile ? '16px' : '32px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              <h2 style={{ fontSize: '16px', fontWeight: '800', color: '#e6edf3', margin: 0, fontFamily: "'Syne', sans-serif" }}>Your application</h2>
 
             {/* Name + Email */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '6px' }}>Full name *</label>
+
                 <input style={inputStyle} placeholder="Your full name" value={form.full_name} onChange={e => setForm({ ...form, full_name: e.target.value })}
                   onFocus={e => e.target.style.borderColor = 'rgba(245,158,11,0.4)'}
                   onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
@@ -160,9 +162,10 @@ export default function Mentors() {
             </div>
 
             {/* Role + Institution */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '6px' }}>Your role *</label>
+
                 <input style={inputStyle} placeholder="e.g. CS student at Waterloo, Software Engineer" value={form.role} onChange={e => setForm({ ...form, role: e.target.value })}
                   onFocus={e => e.target.style.borderColor = 'rgba(245,158,11,0.4)'}
                   onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.08)'} />
@@ -228,7 +231,7 @@ export default function Mentors() {
             {error && <p style={{ color: '#f85149', fontSize: '13px', margin: 0 }}>{error}</p>}
 
             <button onClick={handleSubmit} disabled={loading} style={{
-              padding: '13px', borderRadius: '10px', border: 'none',
+              padding: '13px', minHeight: '44px', borderRadius: '10px', border: 'none',
               backgroundColor: loading ? '#21262d' : '#f59e0b',
               color: loading ? '#484f58' : '#0d1117',
               fontSize: '14px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer',

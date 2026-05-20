@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { useResponsive, COMPONENT, COLORS, SPACING } from '../config/responsive'
 import OpportunityModal from './OpportunityModal'
 import MatchScore from './MatchScore'
 import ApplyModal from './ApplyModal'
 
 
 export default function OpportunityCard({ opportunity, isSaved, isApplied, deadlineUrgency, onToggleSave, onLogView, onTrackApplication }) {
+  const { isMobile } = useResponsive()
   const [showModal, setShowModal] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -31,7 +33,7 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
           ? '1.5px solid rgba(248,81,73,0.4)'
           : '1px solid rgba(255,255,255,0.07)',
         borderRadius: '14px',
-        padding: '0',
+        padding: isMobile ? COMPONENT.opCard.mobilePadding : COMPONENT.opCard.desktopPadding,
         display: 'flex', flexDirection: 'column',
         cursor: 'pointer', overflow: 'hidden',
         position: 'relative',
@@ -52,8 +54,8 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
           </div>
         )}
 
-        <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '10px', flex: 1 }}>
-          {/* Top row */}
+            <div style={{ padding: '0', display: 'flex', flexDirection: 'column', gap: isMobile ? COMPONENT.opCard.mobileGap : COMPONENT.opCard.desktopGap, flex: 1 }}>
+            {/* Top row */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
               <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', backgroundColor: cfg.bg, color: cfg.color }}>
@@ -87,11 +89,11 @@ export default function OpportunityCard({ opportunity, isSaved, isApplied, deadl
               </span>
             )}
           </div>
-
+            
           {/* Hover CTA */}
           {isHovering && (
             <div style={{ display: 'flex', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.05)', animation: 'slideUp 0.2s ease' }}>
-              <button style={{ flex: 1, padding: '9px 12px', backgroundColor: '#f59e0b', color: '#0d1117', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', letterSpacing: '0.2px' }}
+                <button style={{ flex: 1, minHeight: COMPONENT.button.minHeight, padding: COMPONENT.button.padding, backgroundColor: COLORS.accent, color: COLORS.bg, border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', borderRadius: '8px', fontFamily: 'inherit', letterSpacing: '0.2px' }}
                 onClick={(e) => { e.stopPropagation(); handleViewDetails() }}>
                 View details →
               </button>

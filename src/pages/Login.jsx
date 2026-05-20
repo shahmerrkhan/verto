@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useResponsive } from '../config/responsive'
 
 export default function Login() {
+  const { isMobile } = useResponsive()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -22,8 +24,8 @@ export default function Login() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', padding: '24px', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeSlideIn 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
+<div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', padding: isMobile ? '16px' : '24px', fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ width: '100%', maxWidth: '400px', animation: 'fadeSlideIn 0.4s cubic-bezier(0.22,1,0.36,1)' }}>
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '24px' }}>
             <svg width="32" height="32" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
@@ -37,7 +39,7 @@ export default function Login() {
           <p style={{ fontSize: '14px', color: '#7d8590' }}>Sign in to see your matched opportunities</p>
         </div>
 
-        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: '32px' }}>
+        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '16px', padding: isMobile ? '20px 16px' : '32px' }}>
           {error && (
             <div style={{ padding: '11px 14px', backgroundColor: 'rgba(248,81,73,0.1)', border: '1px solid rgba(248,81,73,0.2)', borderRadius: '8px', color: '#f85149', fontSize: '13px', marginBottom: '20px' }}>{error}</div>
           )}
@@ -52,7 +54,7 @@ export default function Login() {
                   onFocus={() => setFocused(field.name)} onBlur={() => setFocused(null)} />
               </div>
             ))}
-            <button type="submit" disabled={loading} style={{ marginTop: '4px', padding: '13px 16px', borderRadius: '10px', backgroundColor: loading ? '#1c2330' : '#f59e0b', color: loading ? '#484f58' : '#0d1117', fontSize: '14px', fontWeight: '700', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' }}>
+            <button type="submit" disabled={loading} style={{ marginTop: '4px', padding: '13px 16px', minHeight: '44px', borderRadius: '10px', backgroundColor: loading ? '#1c2330' : '#f59e0b', color: loading ? '#484f58' : '#0d1117', fontSize: '14px', fontWeight: '700', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' }}>
               {loading ? 'Signing in...' : 'Sign in →'}
             </button>
           </form>

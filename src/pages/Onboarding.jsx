@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
+import { useResponsive } from '../config/responsive'
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -17,6 +18,7 @@ const PROVINCES = [
 const GPA_RANGES = ['4.0', '3.5-3.9', '3.0-3.4', '2.5-2.9', 'Below 2.5', 'N/A']
 
 export default function Profile() {
+  const { isMobile } = useResponsive()
   const { user, profile, signOut } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
@@ -67,9 +69,9 @@ export default function Profile() {
   })
 
   return (
-    <div style={{ ...styles.container, animation: 'fadeSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}>
-      <div style={styles.header} className="header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+<div style={{ ...styles.container, padding: isMobile ? '24px 16px' : '40px 24px', animation: 'fadeSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}>
+<div style={{ ...styles.header, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '0' }} className="header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <svg width="30" height="30" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
             <rect width="80" height="80" rx="16" fill="#064e3b"/>
             <polygon points="40,12 64,68 52,68 40,40 28,68 16,68" fill="#34d399"/>
@@ -77,9 +79,9 @@ export default function Profile() {
           </svg>
           <span style={styles.logoText}>verto</span>
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
-          <button
-            style={styles.backBtn}
+<div style={{ display: 'flex', gap: '10px', width: isMobile ? '100%' : 'auto' }}>
+            <button
+            style={{ ...styles.backBtn, flex: isMobile ? 1 : 'none', minHeight: '44px' }}
             onClick={() => navigate('/dashboard')}
             onMouseEnter={e => { e.target.style.backgroundColor = '#064e3b'; e.target.style.color = '#fff' }}
             onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#064e3b' }}
@@ -87,7 +89,7 @@ export default function Profile() {
             ← Dashboard
           </button>
           <button
-            style={styles.signOutBtn}
+            style={{ ...styles.signOutBtn, flex: isMobile ? 1 : 'none', minHeight: '44px' }}
             onClick={signOut}
             onMouseEnter={e => { e.target.style.backgroundColor = '#f3f4f6' }}
             onMouseLeave={e => { e.target.style.backgroundColor = 'transparent' }}
@@ -102,8 +104,8 @@ export default function Profile() {
         <p style={styles.subtitle}>Update your info to get better matched opportunities</p>
       </div>
 
-      <div style={styles.grid}>
-        <div style={styles.section}>
+<div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: isMobile ? '12px' : '24px' }}>
+          <div style={{ ...styles.section, padding: isMobile ? '16px' : '28px' }}>
           <h3 style={styles.sectionTitle}>Basic info</h3>
           <div style={styles.fieldGroup}>
             <label style={styles.label}>Full name</label>
@@ -180,7 +182,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div style={styles.section}>
+        <div style={{ ...styles.section, padding: isMobile ? '16px' : '28px' }}>
           <h3 style={styles.sectionTitle}>Interests</h3>
           <p style={styles.sectionSub}>These drive your AI matches</p>
           <div style={styles.tagGrid}>
@@ -200,10 +202,12 @@ export default function Profile() {
         </div>
       </div>
 
-      <div style={styles.saveRow}>
+      <div style={{ ...styles.saveRow, justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
         <button
           style={{
             ...styles.saveBtn,
+            width: isMobile ? '100%' : 'auto',
+            minHeight: '44px',
             backgroundColor: saved ? '#f0fdf4' : '#064e3b',
             color: saved ? '#064e3b' : '#fff',
             border: saved ? '1.5px solid #6ee7b7' : 'none',

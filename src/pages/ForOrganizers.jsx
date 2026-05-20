@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
+import { useResponsive } from '../config/responsive'
 
 const PLANS = [
   {
@@ -60,6 +61,7 @@ const STATS = [
 ]
 
 export default function ForOrganizers() {
+  const { isMobile } = useResponsive()
   const navigate = useNavigate()
   const [form, setForm] = useState({
     org_name: '',
@@ -120,8 +122,7 @@ export default function ForOrganizers() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#0d1117', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ maxWidth: '900px', margin: '0 auto', padding: '80px 24px' }}>
-
+<div style={{ maxWidth: '900px', margin: '0 auto', padding: isMobile ? '48px 16px' : '80px 24px' }}>
         {/* Nav back */}
         <button
           onClick={() => navigate('/')}
@@ -135,8 +136,8 @@ export default function ForOrganizers() {
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', padding: '4px 12px', borderRadius: '20px', backgroundColor: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', marginBottom: '16px' }}>
             <span style={{ fontSize: '11px', fontWeight: '700', color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.8px' }}>For Organizers</span>
           </div>
-          <h1 style={{ fontSize: '36px', fontWeight: '800', color: '#e6edf3', margin: '0 0 16px', fontFamily: "'Syne', sans-serif", lineHeight: 1.15 }}>
-            Reach students who are<br />
+<h1 style={{ fontSize: isMobile ? '26px' : '36px', fontWeight: '800', color: '#e6edf3', margin: '0 0 16px', fontFamily: "'Syne', sans-serif", lineHeight: 1.15 }}>
+              Reach students who are<br />
             <span style={{ color: '#f59e0b' }}>actually ready to apply.</span>
           </h1>
           <p style={{ fontSize: '16px', color: '#7d8590', margin: '0 0 32px', lineHeight: 1.6, maxWidth: '580px' }}>
@@ -144,8 +145,8 @@ export default function ForOrganizers() {
           </p>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}>
-            {STATS.map(s => (
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px' }}>
+              {STATS.map(s => (
               <div key={s.label} style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '16px' }}>
                 <div style={{ fontSize: '18px', fontWeight: '800', color: '#e6edf3', fontFamily: "'Syne', sans-serif" }}>{s.value}</div>
                 <div style={{ fontSize: '11px', color: '#484f58', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.6px', marginTop: '3px' }}>{s.label}</div>
@@ -159,8 +160,8 @@ export default function ForOrganizers() {
           <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#e6edf3', margin: '0 0 24px', fontFamily: "'Syne', sans-serif" }}>
             Why list on Verto?
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
-            {[
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+              {[
               { icon: '🎯', title: 'Pre-qualified applicants', desc: "Every student sees your listing because our AI matched them to it based on grade, province, and interests. No random traffic." },
               { icon: '📊', title: 'Real applicant data', desc: "See how many students saved your opportunity, how many applied, and track engagement over your listing period." },
               { icon: '⏰', title: 'Deadline-aware nudges', desc: "Students who save your listing get automatic alerts as your deadline approaches. Less drop-off, more completed applications." },
@@ -183,7 +184,7 @@ export default function ForOrganizers() {
             Simple pricing
           </h2>
           <p style={{ fontSize: '14px', color: '#7d8590', margin: '0 0 24px' }}>No contracts. Cancel anytime. First month free for new listings.</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(260px, 1fr))', gap: '14px' }}>
             {PLANS.map(plan => (
               <div key={plan.id} style={{ backgroundColor: '#161b22', border: `1px solid ${plan.border}`, borderRadius: '14px', padding: '24px', position: 'relative' }}>
                 {plan.badge && (
@@ -207,8 +208,8 @@ export default function ForOrganizers() {
         </div>
 
         {/* Contact form */}
-        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '36px' }}>
-          {submitted ? (
+<div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: isMobile ? '20px 16px' : '36px' }}>
+            {submitted ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
               <div style={{ fontSize: '40px', marginBottom: '16px' }}>🎉</div>
               <h3 style={{ fontSize: '20px', fontWeight: '800', color: '#e6edf3', margin: '0 0 8px', fontFamily: "'Syne', sans-serif" }}>
@@ -234,7 +235,7 @@ export default function ForOrganizers() {
               </p>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '6px' }}>
                       Organization name *
@@ -328,11 +329,11 @@ export default function ForOrganizers() {
                   onClick={handleSubmit}
                   disabled={loading}
                   style={{
-                    padding: '12px 28px', borderRadius: '10px', border: 'none',
+                    padding: '12px 28px', minHeight: '44px', borderRadius: '10px', border: 'none',
                     backgroundColor: loading ? '#21262d' : '#f59e0b',
                     color: loading ? '#484f58' : '#0d1117',
                     fontSize: '14px', fontWeight: '700', cursor: loading ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit', alignSelf: 'flex-start', transition: 'all 0.15s',
+                    fontFamily: 'inherit', alignSelf: isMobile ? 'stretch' : 'flex-start', transition: 'all 0.15s',
                   }}
                 >
                   {loading ? 'Submitting...' : 'Request a listing →'}

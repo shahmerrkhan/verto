@@ -3,10 +3,12 @@ import { useAuth } from '../context/AuthContext'
 import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import ResearchPaperCard from '../components/ResearchPaperCard'
+import { useResponsive } from '../config/responsive'
 
 const ITEMS_PER_PAGE = 10
 
 export default function Research() {
+  const { isMobile } = useResponsive()
   const [papers, setPapers] = useState([])
   const [filteredPapers, setFilteredPapers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -47,8 +49,8 @@ export default function Research() {
   const totalPages = Math.ceil(filteredPapers.length / ITEMS_PER_PAGE)
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ marginBottom: '28px' }}>
+<div style={{ maxWidth: '1100px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', marginBottom: '6px', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Research papers hub</h1>
         <p style={{ fontSize: '14px', color: '#7d8590', margin: 0 }}>Explore peer-reviewed research across AI, computer science, and more</p>
       </div>

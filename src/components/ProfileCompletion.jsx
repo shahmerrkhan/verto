@@ -1,7 +1,9 @@
 import { useNavigate } from 'react-router-dom'
+import { useResponsive } from '../config/responsive'
 
 export default function ProfileCompletion({ profile }) {
   const navigate = useNavigate()
+  const { isMobile } = useResponsive()
 
   const fields = [
     { key: 'full_name', label: 'Full name', completed: !!profile?.full_name },
@@ -33,8 +35,8 @@ export default function ProfileCompletion({ profile }) {
       <div style={{ height: '4px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden', marginBottom: '14px' }}>
         <div style={{ height: '100%', width: `${percentage}%`, backgroundColor: '#f59e0b', borderRadius: '2px', transition: 'width 0.4s ease' }} />
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
-        {fields.map(field => (
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+          {fields.map(field => (
           <div key={field.key} style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
             <span style={{ width: '16px', height: '16px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '700', backgroundColor: field.completed ? 'rgba(63,185,80,0.15)' : 'rgba(255,255,255,0.05)', color: field.completed ? '#3fb950' : '#484f58', flexShrink: 0, border: field.completed ? '1px solid rgba(63,185,80,0.3)' : '1px solid rgba(255,255,255,0.08)' }}>
               {field.completed ? '✓' : ''}

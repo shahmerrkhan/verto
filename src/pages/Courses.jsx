@@ -4,10 +4,12 @@ import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import CourseCard from '../components/CourseCard'
 import LoadingSkeleton from '../components/LoadingSkeleton'
+import { useResponsive } from '../config/responsive'
 
 const ITEMS_PER_PAGE = 9
 
 export default function Courses() {
+  const { isMobile } = useResponsive()
   const { user } = useAuth()
   const [courses, setCourses] = useState([])
   const [filteredCourses, setFilteredCourses] = useState([])
@@ -54,8 +56,8 @@ export default function Courses() {
   const totalPages = Math.ceil(filteredCourses.length / ITEMS_PER_PAGE)
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
-      <div style={{ marginBottom: '28px' }}>
+<div style={{ maxWidth: '1200px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
+        <div style={{ marginBottom: '28px' }}>
         <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', marginBottom: '6px', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Skill-building courses</h1>
         <p style={{ fontSize: '14px', color: '#7d8590', margin: 0 }}>Learn from industry leaders — curated for high school students</p>
       </div>
@@ -98,8 +100,8 @@ export default function Courses() {
       ) : (
         <>
           <p style={{ fontSize: '13px', fontWeight: '600', color: '#7d8590', marginBottom: '16px' }}>{filteredCourses.length} course{filteredCourses.length !== 1 ? 's' : ''}</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '14px', marginBottom: '32px' }}>
-            {filteredCourses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(course => (
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: isMobile ? '10px' : '14px', marginBottom: '32px' }}>
+              {filteredCourses.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE).map(course => (
               <CourseCard key={course.id} course={course} platformLogo={platformLogos[course.platform?.toLowerCase()] || '🌐'} />
             ))}
           </div>

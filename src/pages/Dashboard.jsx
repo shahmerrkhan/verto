@@ -264,7 +264,7 @@ export default function Dashboard() {
             <SortBar onSortChange={setSortBy} />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '14px' }}>
             {paginatedOpps.map(op => (
               <OpportunityCard key={op.id} opportunity={op} isSaved={saves.includes(op.id)} isApplied={applications.includes(op.id)} onToggleSave={toggleSave} onLogView={handleLogView} onTrackApplication={trackApplicationHelper} deadlineUrgency={getDeadlineUrgency(getDaysUntilDeadline(op.deadline))} />
             ))}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useResponsive, COMPONENT, COLORS } from '../config/responsive'
 import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
@@ -40,6 +41,7 @@ export default function Leaderboard() {
   const [search, setSearch] = useState('')
   const [stats, setStats] = useState({ total: 0, totalPrize: 0, schools: 0 })
   const navigate = useNavigate()
+  const { isMobile, isTablet } = useResponsive()
 
   useEffect(() => { fetchWinners() }, [])
 
@@ -107,7 +109,7 @@ export default function Leaderboard() {
         </div>
 
         {/* Stats bar */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', marginBottom: '28px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? COMPONENT.leaderboard.mobileStatsColumns : isTablet ? COMPONENT.leaderboard.tabletStatsColumns : COMPONENT.leaderboard.desktopStatsColumns}, 1fr)`, gap: '12px', marginBottom: '28px' }}>
           {[
             { label: 'Total wins', value: stats.total, icon: '🏆' },
             { label: 'Prize value', value: stats.totalPrize > 0 ? `$${stats.totalPrize.toLocaleString()}` : '—', icon: '💰' },
@@ -180,7 +182,8 @@ export default function Leaderboard() {
             <div key={w.id} style={{
               backgroundColor: '#161b22',
               border: `1px solid ${w.outcome === 'won' ? 'rgba(63,185,80,0.2)' : 'rgba(245,158,11,0.15)'}`,
-              borderRadius: '14px', padding: '20px 24px',
+              borderRadius: '14px', 
+              padding: isMobile ? COMPONENT.leaderboard.mobileWinnerPadding : COMPONENT.leaderboard.desktopWinnerPadding,
               display: 'flex', alignItems: 'flex-start', gap: '16px',
               transition: 'border-color 0.2s',
             }}>

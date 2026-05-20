@@ -53,8 +53,11 @@ export default function ApplyModal({ opportunity, onClose, onApplied }) {
     }} onClick={onClose}>
       <div style={{
         background: '#161b22', border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '16px', padding: '28px', maxWidth: '500px',
-        width: '100%', position: 'relative',
+        borderRadius: window.innerWidth < 640 ? '16px 16px 0 0' : '16px', 
+        padding: window.innerWidth < 640 ? '20px' : '28px', 
+        maxWidth: '500px',
+        width: '100%', position: 'relative', 
+        maxHeight: window.innerWidth < 640 ? '90vh' : 'auto',
       }} onClick={e => e.stopPropagation()}>
 
         <button onClick={onClose} style={{ position: 'absolute', top: '16px', right: '16px', background: 'none', border: 'none', color: '#484f58', fontSize: '18px', cursor: 'pointer', lineHeight: 1 }}>✕</button>

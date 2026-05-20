@@ -7,6 +7,7 @@ import { BadgeGrid } from '../components/Badges'
 import { useLocation } from 'react-router-dom'
 import MatchShareCard from '../components/MatchShareCard'
 import { supabase } from '../lib/supabase'
+import { useResponsive } from '../config/responsive'
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -51,6 +52,7 @@ function CustomSelect({ label, value, options, onChange }) {
 }
 
 export default function Profile() {
+  const { isMobile } = useResponsive()
   const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({
@@ -133,7 +135,7 @@ export default function Profile() {
   })
 
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif', animation: 'fadeSlideIn 0.5s cubic-bezier(0.22,1,0.36,1)' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px', fontFamily: 'DM Sans, sans-serif', animation: 'fadeSlideIn 0.5s cubic-bezier(0.22,1,0.36,1)' }}>
       {showShareCard && (
         <MatchShareCard
           profile={{ ...form, grade: form.grade }}
@@ -147,9 +149,9 @@ export default function Profile() {
         <OnboardingProgress currentStep={1} totalSteps={1} />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: '20px', marginBottom: '24px' }}>
-        {/* Basic info */}
-        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: isMobile ? '12px' : '20px', marginBottom: '24px' }}>
+          {/* Basic info */}
+        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: isMobile ? '16px' : '24px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#e6edf3', marginBottom: '20px', fontFamily: "'Syne', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}>Basic info</h3>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
@@ -188,7 +190,7 @@ export default function Profile() {
         </div>
 
         {/* Interests */}
-        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: '24px' }}>
+        <div style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '16px', padding: isMobile ? '16px' : '24px' }}>
           <h3 style={{ fontSize: '14px', fontWeight: '800', color: '#e6edf3', marginBottom: '4px', fontFamily: "'Syne', sans-serif", textTransform: 'uppercase', letterSpacing: '0.5px' }}>Interests</h3>
           <p style={{ fontSize: '12px', color: '#484f58', marginBottom: '16px' }}>These drive your AI matches — pick everything that applies</p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
@@ -211,9 +213,9 @@ export default function Profile() {
         </div>
       )}
 
-      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '16px' }}>
-        <p style={{ fontSize: '12px', color: '#484f58', margin: 0 }}>Changes apply to your next AI match refresh</p>
-        <button onClick={handleSave} disabled={loading} style={{ padding: '11px 28px', borderRadius: '10px', border: saved ? '1px solid rgba(63,185,80,0.3)' : 'none', backgroundColor: saved ? 'rgba(63,185,80,0.1)' : '#f59e0b', color: saved ? '#3fb950' : '#0d1117', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit', opacity: loading ? 0.7 : 1 }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'flex-end', alignItems: isMobile ? 'stretch' : 'center', gap: '12px' }}>
+        <p style={{ fontSize: '12px', color: '#484f58', margin: 0, textAlign: isMobile ? 'center' : 'right' }}>Changes apply to your next AI match refresh</p>
+        <button onClick={handleSave} disabled={loading} style={{ padding: isMobile ? '13px 28px' : '11px 28px', minHeight: isMobile ? '44px' : '40px', borderRadius: '10px', border: saved ? '1px solid rgba(63,185,80,0.3)' : 'none', backgroundColor: saved ? 'rgba(63,185,80,0.1)' : '#f59e0b', color: saved ? '#3fb950' : '#0d1117', fontSize: '13px', fontWeight: '700', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit', opacity: loading ? 0.7 : 1 }}>
           {loading ? 'Saving...' : saved ? '✓ Saved' : 'Save changes'}
         </button>
       </div>

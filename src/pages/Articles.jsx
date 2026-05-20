@@ -4,10 +4,12 @@ import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import ArticleCard from '../components/ArticleCard'
 import { useNavigate } from 'react-router-dom'
+import { useResponsive } from '../config/responsive'
 
 const ITEMS_PER_PAGE = 10
 
 export default function Articles() {
+  const { isMobile } = useResponsive()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [articles, setArticles] = useState([])
@@ -47,14 +49,14 @@ export default function Articles() {
   const totalPages = Math.ceil(filteredArticles.length / ITEMS_PER_PAGE)
 
   return (
-    <div style={{ maxWidth: '860px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
+<div style={{ maxWidth: '860px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div>
+<div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'flex-start', marginBottom: '24px', gap: '12px' }}>
+          <div>
           <h1 style={{ fontSize: '24px', fontWeight: '800', color: '#e6edf3', marginBottom: '6px', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Community articles</h1>
           <p style={{ fontSize: '14px', color: '#7d8590', margin: 0 }}>Learn from students like you. Share your wisdom.</p>
         </div>
-        <button onClick={() => navigate('/submit-article')} style={{ padding: '10px 18px', borderRadius: '10px', backgroundColor: '#f59e0b', color: '#0d1117', border: 'none', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
+<button onClick={() => navigate('/submit-article')} style={{ padding: '10px 18px', minHeight: '44px', width: isMobile ? '100%' : 'auto', borderRadius: '10px', backgroundColor: '#f59e0b', color: '#0d1117', border: 'none', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s', whiteSpace: 'nowrap' }}
           onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#fbbf24'; e.currentTarget.style.transform = 'translateY(-1px)' }}
           onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#f59e0b'; e.currentTarget.style.transform = 'translateY(0)' }}>
           ✏ Write article

@@ -6,9 +6,11 @@ import { supabase } from '../lib/supabase'
 import Logo from './Logo'
 import SearchPalette from './SearchPalette'
 import { getAvatarColor, getInitials } from '../utils/avatarColor'
+import { useResponsive } from '../config/responsive'
 
 
 export default function Navbar() {
+  const { isMobile } = useResponsive()
   const navigate = useNavigate()
   const location = useLocation()
   const { user, profile, signOut } = useAuth()
@@ -191,8 +193,9 @@ export default function Navbar() {
   return (
     <>
       <style>{`
-        @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
-        @media (max-width: 1024px) { .desktop-nav { display:none!important; } .mobile-hamburger { display:flex!important; } .desktop-right { display:none!important; } }
+      @keyframes slideDown { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
+        body.menu-open { overflow: hidden; touch-action: none; }
+                @media (max-width: 1024px) { .desktop-nav { display:none!important; } .mobile-hamburger { display:flex!important; } .desktop-right { display:none!important; } }
         @media (min-width: 1025px) { .mobile-hamburger { display:none!important; } }
         .nav-item:hover { background: rgba(245,158,11,0.08)!important; color: #f59e0b!important; }
         .icon-btn:hover { background: rgba(255,255,255,0.06)!important; }
@@ -209,7 +212,7 @@ export default function Navbar() {
         transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1), background-color 0.3s ease, box-shadow 0.3s ease',
         boxShadow: scrolled ? '0 8px 32px rgba(0,0,0,0.4)' : 'none',
       }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '0 20px', height: '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', padding: isMobile ? '0 16px' : '0 20px', height: isMobile ? '56px' : '60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
           {/* Logo */}
           <div style={{ minWidth: 'fit-content', cursor: 'pointer' }} onClick={() => navigate('/dashboard')}>
             <Logo theme={theme} currentTheme={currentTheme} />
@@ -303,14 +306,14 @@ export default function Navbar() {
           </div>
 
           {/* Mobile hamburger */}
-          <button className="mobile-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ display: 'none', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', width: '36px', height: '36px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#e6edf3', fontSize: '16px', fontFamily: 'inherit' }}>
+            <button className="mobile-hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ display: 'none', background: 'none', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', width: '44px', height: '44px', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#e6edf3', fontSize: '16px', fontFamily: 'inherit' }}>
             {mobileMenuOpen ? '✕' : '☰'}
           </button>
         </div>
 
         {/* Mobile menu */}
         {mobileMenuOpen && (
-          <div style={{ backgroundColor: '#0d1117', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px 20px', position: 'fixed', top: '60px', left: 0, right: 0, maxHeight: 'calc(100vh - 60px)', overflowY: 'auto', zIndex: 9999, animation: 'slideDown 0.25s ease' }}>
+          <div style={{ backgroundColor: '#0d1117', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px 20px', position: 'fixed', top: isMobile ? '56px' : '60px', left: 0, right: 0, maxHeight: 'calc(100vh - 60px)', overflowY: 'auto', zIndex: 9999, animation: 'slideDown 0.25s ease' }}>
             {navItems.map(item => (
               <button key={item.path} className="mobile-menu-item" onClick={() => { navigate(item.path); setMobileMenuOpen(false) }} style={{ width: '100%', padding: '13px 14px', borderRadius: '10px', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '10px', transition: 'all 0.15s ease', fontFamily: 'inherit', color: isActive(item.path) ? '#f59e0b' : '#e6edf3', backgroundColor: isActive(item.path) ? 'rgba(245,158,11,0.08)' : 'transparent', marginBottom: '2px' }}>
                 <span style={{ fontSize: '13px' }}>{item.icon}</span> {item.label}

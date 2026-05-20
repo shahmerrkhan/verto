@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import { useResponsive } from '../config/responsive'
 
 export default function YouMightHaveMissed() {
+  const { isMobile } = useResponsive()
   const { user } = useAuth()
   const navigate = useNavigate()
   const [opps, setOpps] = useState([])
@@ -62,8 +64,8 @@ export default function YouMightHaveMissed() {
         </button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))', gap: '12px' }}>
-        {opps.map(op => {
+<div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))', gap: isMobile ? '10px' : '12px' }}>
+          {opps.map(op => {
           const tc = typeColors[op.type] || typeColors.program
           const daysLeft = op.deadline
             ? Math.ceil((new Date(op.deadline) - new Date()) / (1000 * 60 * 60 * 24))

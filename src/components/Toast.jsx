@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 
+import { useResponsive } from '../config/responsive'
+
 export default function Toast({ message, type = 'success', duration = 3000, onClose }) {
-  const [isExiting, setIsExiting] = useState(false)
+    const [isExiting, setIsExiting] = useState(false)
 
   useEffect(() => {
     const timer = setTimeout(() => { setIsExiting(true); setTimeout(onClose, 300) }, duration)
@@ -16,12 +18,12 @@ export default function Toast({ message, type = 'success', duration = 3000, onCl
 
   return (
     <div style={{
-      position: 'fixed', bottom: '80px', right: '20px',
+      position: 'fixed', bottom: isMobile ? '100px' : '80px', right: isMobile ? '12px' : '20px',
       padding: '12px 16px', borderRadius: '10px',
       fontSize: '13px', fontWeight: '600',
       display: 'flex', alignItems: 'center', gap: '8px',
       boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-      zIndex: 2000, maxWidth: '280px',
+      zIndex: 2000, maxWidth: isMobile ? '85vw' : '280px',
       backgroundColor: '#161b22',
       border: `1px solid ${c.border}`,
       color: c.color,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useResponsive } from '../config/responsive'
 
 export default function FilterBar({ onFilterChange, opportunities }) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -6,6 +7,7 @@ export default function FilterBar({ onFilterChange, opportunities }) {
   const [selectedProvince, setSelectedProvince] = useState('all')
   const [minAmount, setMinAmount] = useState('')
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const { isMobile } = useResponsive()
 
   const types = ['all', 'scholarship', 'competition', 'internship', 'program', 'grant']
   const provinces = ['all', 'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'ON', 'PE', 'QC', 'SK']
@@ -52,9 +54,10 @@ export default function FilterBar({ onFilterChange, opportunities }) {
     setMinAmount('')
   }
 
+  
   return (
-    <div style={{ marginBottom: '24px', backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
-
+    <div style={{ marginBottom: '24px', backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: isMobile ? '12px 16px' : '16px 20px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      
       {/* Search input */}
       <div style={{ position: 'relative' }}>
         <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', fontSize: '14px', pointerEvents: 'none' }}>🔍</span>

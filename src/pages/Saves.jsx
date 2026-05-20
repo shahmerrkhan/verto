@@ -9,8 +9,10 @@ import Footer from '../components/Footer'
 import DeadlineCountdown from '../components/DeadlineCountdown'
 import { checkNewBadges, BADGE_DEFINITIONS, BadgeUnlockNotification } from '../components/Badges'
 import Toast from '../components/Toast'
+import { useResponsive } from '../config/responsive'
 
 export default function Saves() {
+  const { isMobile } = useResponsive()
   const { user } = useAuth()
   const [savedOpportunities, setSavedOpportunities] = useState([])
   const [loading, setLoading] = useState(true)
@@ -245,15 +247,15 @@ async function updateNote(oppId, note) {
   })
 
   return (
-    <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
+    <div style={{ maxWidth: '1140px', margin: '0 auto', padding: isMobile ? '80px 16px 60px' : '96px 24px 80px', fontFamily: 'DM Sans, sans-serif' }}>
 
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+      <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', justifyContent: 'space-between', alignItems: isMobile ? 'flex-start' : 'center', marginBottom: '24px', gap: '12px' }}>
         <div>
           <h1 style={{ fontSize: '22px', fontWeight: '800', color: '#e6edf3', margin: '0 0 4px', fontFamily: "'Syne', sans-serif" }}>Saved opportunities</h1>
           <p style={{ fontSize: '13px', color: '#7d8590', margin: 0 }}>{savedOpportunities.length} saved</p>
         </div>
-        <button onClick={exportCSV} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#161b22', color: '#7d8590', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
+        <button onClick={exportCSV} style={{ padding: '8px 16px', minHeight: isMobile ? '44px' : '36px', width: isMobile ? '100%' : 'auto', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: '#161b22', color: '#7d8590', fontSize: '12px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>
           ↓ Export CSV
         </button>
       </div>
@@ -385,8 +387,8 @@ async function updateNote(oppId, note) {
               <p style={{ margin: 0, color: '#484f58', fontSize: '14px' }}>No results. Try adjusting your filters.</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: '16px' }}>
-              {filteredAndSorted.map(op => {
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: isMobile ? '12px' : '16px' }}>
+            {filteredAndSorted.map(op => {
                 const status = getDeadlineStatus(op.deadline)
                 const meta = metadata[op.id] || {}
                 const isArchived = meta.is_archived
