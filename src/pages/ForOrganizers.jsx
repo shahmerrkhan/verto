@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
 import { useResponsive } from '../config/responsive'
@@ -91,19 +90,20 @@ export default function ForOrganizers() {
     setLoading(true)
     setError('')
 
-    const { error: dbError } = await supabase
-      .from('organizer_listings')
-      .insert({
+    const res = await fetch('/api/organizer-listing', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         org_name: form.org_name.trim(),
         contact_name: form.contact_name.trim() || null,
         contact_email: form.contact_email.trim(),
         plan: form.plan,
         notes: form.notes.trim() || null,
-        status: 'pending',
         monthly_fee: form.plan === 'basic' ? 50 : form.plan === 'featured' ? 120 : 250,
-      })
+      }),
+    })
 
-    if (dbError) {
+    if (!res.ok) {
       setError('Something went wrong. Try again or email us directly.')
       setLoading(false)
       return

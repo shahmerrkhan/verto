@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useResponsive, COMPONENT, COLORS } from '../config/responsive'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
 
@@ -46,20 +45,22 @@ export default function Leaderboard() {
   useEffect(() => { fetchWinners() }, [])
 
   async function fetchWinners() {
-    const { data, error } = await supabase
-      .from('winners')
-      .select('*')
-      .order('won_at', { ascending: false })
-
-    if (!error && data) {
-      setWinners(data)
-      const uniqueSchools = new Set(data.filter(w => w.school).map(w => w.school)).size
-      const totalPrize = data.reduce((sum, w) => sum + (w.prize_amount || 0), 0)
-      setStats({ total: data.length, totalPrize, schools: uniqueSchools })
+    try {
+      const res = await fetch('/api/winners')
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setWinners(data)
+        const uniqueSchools = new Set(data.filter(w => w.school).map(w => w.school)).size
+        const totalPrize = data.reduce((sum, w) => sum + (w.prize_amount || 0), 0)
+        setStats({ total: data.length, totalPrize, schools: uniqueSchools })
+      }
+    } catch (err) {
+      console.error('Failed to fetch winners:', err)
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }
-
+  
   const filtered = winners
     .filter(w => {
       const matchesFilter = filter === 'All' || (filter === 'Won' && w.outcome === 'won') || (filter === 'Finalist' && w.outcome === 'finalist')

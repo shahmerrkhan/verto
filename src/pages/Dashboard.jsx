@@ -1,303 +1,460 @@
-import { useEffect, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { getOpportunities, getSaves, getApplications, saveOpportunity, unsaveOpportunity, trackApplication, logView, awardBadges } from '../lib/dbHelpers'
-import OpportunityCard from '../components/OpportunityCard'
+import { useEffect, useState, useMemo } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { getOpportunities, getSaves, getApplications, saveOpportunity, unsaveOpportunity, trackApplication, logView } from '../lib/db'
 import { rankOpportunitiesWithAI } from '../lib/aiMatcher'
-import FilterBar from '../components/FilterBar'
-import Toast from '../components/Toast'
-import SortBar from '../components/SortBar'
-import RecommendedSection from '../components/RecommendedSection'
-import ProfileCompletion from '../components/ProfileCompletion'
-import Footer from '../components/Footer'
-import OpportunityOfTheDay from '../components/OpportunityOfTheDay'
-import YouMightHaveMissed from '../components/YouMightHaveMissed'
-import confetti from 'canvas-confetti'
-import { checkNewBadges, BADGE_DEFINITIONS, BadgeUnlockNotification } from '../components/Badges'
 import { calculateMatchScore } from '../lib/opportunityMatcher'
-import { searchOpportunities, rankSearchResults } from '../lib/fullTextSearch'
-import { trackPageView, trackSearch } from '../lib/analytics'
+import OpportunityCard from '../components/OpportunityCard'
+import Toast from '../components/Toast'
+import Footer from '../components/Footer'
+
+const ITEMS_PER_PAGE = 12
 
 const QUICK_FILTERS = [
-  { label: '💰 High value', id: 'highValue', filter: (op) => (op.amount || 0) >= 5000 },
-  { label: '⏰ Due this month', id: 'thisMonth', filter: (op) => {
+  { label: '💰 High value', id: 'highValue', filter: op => (op.amount || 0) >= 5000 },
+  { label: '⏰ Due this month', id: 'thisMonth', filter: op => {
     if (!op.deadline) return false
     const days = Math.ceil((new Date(op.deadline) - new Date()) / (1000 * 60 * 60 * 24))
     return days <= 30 && days > 0
   }},
-  { label: '⭐ No essay', id: 'noEssay', filter: (op) => !op.requires_essay },
-  { label: '🆕 Just added', id: 'newlyAdded', filter: (op) => {
+  { label: '✏️ No essay', id: 'noEssay', filter: op => !op.requires_essay },
+  { label: '✨ Just added', id: 'newlyAdded', filter: op => {
     if (!op.created_at) return false
     return Math.ceil((new Date() - new Date(op.created_at)) / (1000 * 60 * 60 * 24)) <= 7
   }},
 ]
 
-const ITEMS_PER_PAGE = 12
+function getDaysUntil(deadline) {
+  if (!deadline) return null
+  return Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24))
+}
+
+function getUrgency(days) {
+  if (days === null) return 'none'
+  if (days <= 3) return 'critical'
+  if (days <= 7) return 'high'
+  if (days <= 30) return 'medium'
+  return 'low'
+}
 
 export default function Dashboard() {
   const { user, profile } = useAuth()
-  const [opportunities, setOpportunities] = useState([])
-  const [filteredOpportunities, setFilteredOpportunities] = useState([])
-  const [saves, setSaves] = useState([])
-  const [toast, setToast] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const [filters, setFilters] = useState({ search: '', type: 'all' })
-  const [sortBy, setSortBy] = useState('relevance')
   const navigate = useNavigate()
+
+  const [opportunities, setOpportunities] = useState([])
+  const [saves, setSaves] = useState([])
   const [applications, setApplications] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [typeFilter, setTypeFilter] = useState('all')
   const [activeQuickFilter, setActiveQuickFilter] = useState(null)
+  const [sortBy, setSortBy] = useState('relevance')
   const [currentPage, setCurrentPage] = useState(1)
-  const [pendingBadge, setPendingBadge] = useState(null)
+  const [toast, setToast] = useState(null)
 
   useEffect(() => {
-    trackPageView('/dashboard')
-    if (profile) {
-      fetchOpportunities()
-      fetchSaves()
-      fetchApplications()
-    }
-  }, [profile])
-
-  useEffect(() => {
-    applyFilters(opportunities)
-  }, [opportunities, filters, activeQuickFilter])
-
-  async function fetchOpportunities() {
-    const { data, error } = await getOpportunities()
-    if (error) {
-      console.error(error)
+    if (!user) return
+    Promise.all([
+      getOpportunities(),
+      getSaves(user.id),
+      getApplications(user.id),
+    ]).then(([opps, savedIds, appliedIds]) => {
+      const scored = opps.map(op => ({
+        ...op,
+        matchScore: profile ? calculateMatchScore(op, profile) : 0,
+      }))
+      const ranked = profile ? rankOpportunitiesWithAI(scored, profile) : scored
+      setOpportunities(ranked)
+      setSaves(savedIds)
+      setApplications(appliedIds)
       setLoading(false)
-      return
+    }).catch(() => setLoading(false))
+  }, [user, profile])
+
+  const filtered = useMemo(() => {
+    let list = [...opportunities]
+
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      list = list.filter(op =>
+        op.title?.toLowerCase().includes(q) ||
+        op.org_name?.toLowerCase().includes(q) ||
+        op.description?.toLowerCase().includes(q)
+      )
     }
-    const ranked = (profile ? rankOpportunitiesWithAI(data, profile) : data).map(op => ({
-      ...op,
-      _matchScore: profile ? calculateMatchScore(op, profile) : null,
-    }))
-    setOpportunities(ranked)
-    setLoading(false)
-  }
 
-  async function fetchSaves() {
-    const { data } = await getSaves(user.id)
-    setSaves(data?.map(s => s.opportunity_id) || [])
-  }
-
-  async function fetchApplications() {
-    const { data } = await getApplications(user.id)
-    setApplications(data?.map(a => a.opportunity_id) || [])
-  }
-
-  function applyFilters(opps) {
-    setCurrentPage(1)
-    let result = opps
+    if (typeFilter !== 'all') {
+      list = list.filter(op => op.type === typeFilter)
+    }
 
     if (activeQuickFilter) {
       const qf = QUICK_FILTERS.find(f => f.id === activeQuickFilter)
-      if (qf) result = result.filter(qf.filter)
+      if (qf) list = list.filter(qf.filter)
     }
 
-    if (filters.type !== 'all') result = result.filter(op => op.type === filters.type)
-
-    if (filters.province && filters.province !== 'all') {
-      result = result.filter(op => {
-        const scope = op.province_scope || []
-        return scope.includes('ALL') || scope.includes(filters.province)
+    if (sortBy === 'deadline') {
+      list = list.sort((a, b) => {
+        if (!a.deadline) return 1
+        if (!b.deadline) return -1
+        return new Date(a.deadline) - new Date(b.deadline)
       })
+    } else if (sortBy === 'amount') {
+      list = list.sort((a, b) => (b.amount || 0) - (a.amount || 0))
+    } else if (sortBy === 'newest') {
+      list = list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     }
 
-    if (filters.minAmount) {
-      result = result.filter(op => op.amount && op.amount >= filters.minAmount)
-    }
+    return list
+  }, [opportunities, search, typeFilter, activeQuickFilter, sortBy])
 
-    if (filters.search?.trim()) {
-      trackSearch(filters.search)
-      result = searchOpportunities(result, filters.search)
-      result = rankSearchResults(result, filters.search)
-    }
-
-    setFilteredOpportunities(result)
-  }
-
-  function getDaysUntilDeadline(deadline) {
-    if (!deadline) return null
-    return Math.ceil((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24))
-  }
-
-  function getDeadlineUrgency(days) {
-    if (days === null) return 'normal'
-    if (days < 0) return 'expired'
-    if (days <= 3) return 'urgent'
-    if (days <= 7) return 'soon'
-    return 'normal'
-  }
-
-  function handleSort(opps) {
-    let sorted = [...opps]
-    if (sortBy === 'deadline-asc') sorted.sort((a, b) => (!a.deadline ? 1 : !b.deadline ? -1 : new Date(a.deadline) - new Date(b.deadline)))
-    else if (sortBy === 'amount-desc') sorted.sort((a, b) => (b.amount || 0) - (a.amount || 0))
-    return sorted
-  }
+  const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
 
   async function toggleSave(opportunityId) {
+    if (!user) return
     const isSaved = saves.includes(opportunityId)
-    if (isSaved) {
-      await unsaveOpportunity(user.id, opportunityId)
-      setSaves(saves.filter(id => id !== opportunityId))
-    } else {
-      await saveOpportunity(user.id, opportunityId)
-      const newSaves = [...saves, opportunityId]
-      setSaves(newSaves)
-
-      const hasConfettied = localStorage.getItem('verto-first-save')
-      if (!hasConfettied) {
-        localStorage.setItem('verto-first-save', 'true')
-        confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 }, colors: ['#f59e0b', '#fbbf24', '#3fb950', '#818cf8', '#e6edf3'] })
+    setSaves(prev => isSaved ? prev.filter(id => id !== opportunityId) : [...prev, opportunityId])
+    try {
+      if (isSaved) {
+        await unsaveOpportunity(user.id, opportunityId)
+        setToast({ message: 'Removed from saves', type: 'info' })
+      } else {
+        await saveOpportunity(user.id, opportunityId)
+        setToast({ message: 'Saved!', type: 'success' })
       }
-
-      const newlyEarned = checkNewBadges({
-        saveCount: newSaves.length,
-        appCount: applications.length,
-        hasAccepted: false,
-        speedDemon: false,
-        currentBadges: profile?.badges || [],
-      })
-      if (newlyEarned.length > 0) {
-        awardBadges(user.id, profile?.badges || [], newlyEarned)
-        setPendingBadge(newlyEarned[0])
-      }
+    } catch {
+      setSaves(prev => isSaved ? [...prev, opportunityId] : prev.filter(id => id !== opportunityId))
+      setToast({ message: 'Something went wrong', type: 'error' })
     }
   }
 
-  async function trackApplicationHelper(opportunityId) {
-    const { error } = await trackApplication(user.id, opportunityId)
-
-    if (error) {
-      setToast({ message: 'Failed to track application', type: 'error' })
-      return
-    }
-
-    const newApps = [...applications, opportunityId]
-    setApplications(newApps)
-    setToast({ message: 'Application tracked!', type: 'success' })
-
-    const newlyEarned = checkNewBadges({
-      saveCount: saves.length,
-      appCount: newApps.length,
-      hasAccepted: false,
-      speedDemon: false,
-      currentBadges: profile?.badges || [],
-    })
-    if (newlyEarned.length > 0) {
-      awardBadges(user.id, profile?.badges || [], newlyEarned)
-      setPendingBadge(newlyEarned[0])
+  async function handleTrackApplication(opportunityId) {
+    if (!user || applications.includes(opportunityId)) return
+    setApplications(prev => [...prev, opportunityId])
+    try {
+      await trackApplication(user.id, opportunityId)
+    } catch {
+      setApplications(prev => prev.filter(id => id !== opportunityId))
     }
   }
 
   async function handleLogView(opportunityId) {
-    await logView(user.id, opportunityId)
+    if (!user) return
+    try { await logView(user.id, opportunityId) } catch {}
   }
 
+  const types = ['all', ...new Set(opportunities.map(op => op.type).filter(Boolean))]
+
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117' }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: '28px', height: '28px', border: '2px solid rgba(245,158,11,0.2)', borderTopColor: '#f59e0b', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <span style={{ fontSize: '13px', color: '#484f58', fontFamily: 'DM Sans, sans-serif' }}>Finding your opportunities...</span>
-      </div>
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: 'var(--bg-base)',
+    }}>
+      <div style={{
+        width: '28px', height: '28px',
+        border: '2px solid var(--accent-violet-muted)',
+        borderTopColor: 'var(--accent-violet)',
+        borderRadius: '50%',
+        animation: 'spin 0.7s linear infinite',
+      }} />
     </div>
   )
 
-  const totalPages = Math.ceil(filteredOpportunities.length / ITEMS_PER_PAGE)
-  const paginatedOpps = handleSort(filteredOpportunities).slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
-
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: 'clamp(80px, 10vw, 100px) clamp(16px, 3vw, 24px) 80px' }}>
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: 'var(--bg-base)',
+      paddingTop: '80px',
+      fontFamily: 'var(--font-sans)',
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px 80px' }}>
 
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <h2 style={{ fontSize: '22px', fontWeight: '800', color: '#e6edf3', margin: '0 0 6px 0', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>Your opportunities</h2>
-          <p style={{ fontSize: '14px', color: '#7d8590', margin: 0 }}>Hey {profile?.full_name?.split(' ')[0] || 'there'}, here's what we found for you.</p>
-        </div>
-      </div>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          style={{ marginBottom: '32px', paddingTop: '16px' }}
+        >
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-display)',
+            margin: '0 0 6px',
+            letterSpacing: '-0.5px',
+          }}>
+            {profile?.full_name ? `Hey ${profile.full_name.split(' ')[0]} 👋` : 'Your opportunities'}
+          </h1>
+          <p style={{ fontSize: '14px', color: 'var(--text-secondary)', margin: 0 }}>
+            {filtered.length} opportunities matched to your profile
+          </p>
+        </motion.div>
 
-      <ProfileCompletion profile={profile} />
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05, ease: [0.22, 1, 0.36, 1] }}
+          style={{ marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '12px' }}
+        >
+          <input
+            type="text"
+            placeholder="Search opportunities..."
+            value={search}
+            onChange={e => { setSearch(e.target.value); setCurrentPage(1) }}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-strong)',
+              backgroundColor: 'var(--bg-surface)',
+              color: 'var(--text-primary)',
+              fontSize: '14px',
+              fontFamily: 'var(--font-sans)',
+              outline: 'none',
+              boxSizing: 'border-box',
+              transition: 'border-color var(--transition)',
+            }}
+            onFocus={e => e.target.style.borderColor = 'var(--accent-violet-border)'}
+            onBlur={e => e.target.style.borderColor = 'var(--border-strong)'}
+          />
 
-      <OpportunityOfTheDay />
-
-      {/* Quick filters */}
-      <div style={{ marginBottom: '20px', display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center' }}>
-        <span style={{ fontSize: '10px', fontWeight: '700', color: '#484f58', textTransform: 'uppercase', letterSpacing: '1px', marginRight: '4px' }}>Quick</span>
-        {QUICK_FILTERS.map(qf => (
-          <button key={qf.id} onClick={() => setActiveQuickFilter(activeQuickFilter === qf.id ? null : qf.id)} style={{ padding: '6px 14px', borderRadius: '20px', border: '1px solid', borderColor: activeQuickFilter === qf.id ? '#f59e0b' : 'rgba(255,255,255,0.08)', backgroundColor: activeQuickFilter === qf.id ? 'rgba(245,158,11,0.1)' : 'transparent', color: activeQuickFilter === qf.id ? '#f59e0b' : '#7d8590', fontSize: '12px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.15s ease', fontFamily: 'inherit', whiteSpace: 'nowrap' }}>
-            {qf.label}
-          </button>
-        ))}
-      </div>
-
-      {opportunities.length > 0 && (
-        <RecommendedSection opportunities={opportunities} topN={3} saves={saves} applications={applications} onToggleSave={toggleSave} onLogView={handleLogView} onTrackApplication={trackApplicationHelper} />
-      )}
-
-      <YouMightHaveMissed />
-
-      <FilterBar onFilterChange={setFilters} opportunities={opportunities} />
-
-      {filteredOpportunities.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '80px 24px', backgroundColor: '#161b22', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.06)' }}>
-          {opportunities.length === 0 ? (
-            <>
-              <p style={{ fontSize: '16px', fontWeight: '700', color: '#e6edf3', marginBottom: '8px', fontFamily: "'Syne', sans-serif" }}>No opportunities yet</p>
-              <p style={{ fontSize: '14px', color: '#484f58', marginBottom: '20px' }}>Complete your profile so we can match you to the right ones</p>
-              <button onClick={() => navigate('/profile')} style={{ padding: '10px 20px', borderRadius: '8px', backgroundColor: '#f59e0b', color: '#0d1117', border: 'none', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>Complete profile →</button>
-            </>
-          ) : (
-            <>
-              <p style={{ fontSize: '16px', fontWeight: '700', color: '#e6edf3', marginBottom: '8px', fontFamily: "'Syne', sans-serif" }}>No results found</p>
-              <p style={{ fontSize: '14px', color: '#484f58' }}>Try a different search term or clear your filters</p>
-            </>
-          )}
-        </div>
-      ) : (
-        <>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <p style={{ fontSize: '13px', fontWeight: '600', color: '#7d8590', margin: 0 }}>{filteredOpportunities.length} result{filteredOpportunities.length !== 1 ? 's' : ''}</p>
-            <SortBar onSortChange={setSortBy} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: window.innerWidth < 640 ? '1fr' : 'repeat(auto-fill, minmax(min(280px, 100%), 1fr))', gap: '14px' }}>
-            {paginatedOpps.map(op => (
-              <OpportunityCard key={op.id} opportunity={op} isSaved={saves.includes(op.id)} isApplied={applications.includes(op.id)} onToggleSave={toggleSave} onLogView={handleLogView} onTrackApplication={trackApplicationHelper} deadlineUrgency={getDeadlineUrgency(getDaysUntilDeadline(op.deadline))} />
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            {QUICK_FILTERS.map(qf => (
+              <button
+                key={qf.id}
+                onClick={() => { setActiveQuickFilter(activeQuickFilter === qf.id ? null : qf.id); setCurrentPage(1) }}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid',
+                  borderColor: activeQuickFilter === qf.id ? 'var(--accent-violet-border)' : 'var(--border-default)',
+                  backgroundColor: activeQuickFilter === qf.id ? 'var(--accent-violet-muted)' : 'var(--bg-surface)',
+                  color: activeQuickFilter === qf.id ? 'var(--accent-violet)' : 'var(--text-secondary)',
+                  fontSize: '13px',
+                  fontWeight: '500',
+                  cursor: 'pointer',
+                  fontFamily: 'var(--font-sans)',
+                  transition: 'all var(--transition)',
+                }}
+              >
+                {qf.label}
+              </button>
             ))}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', marginTop: '32px', flexWrap: 'wrap' }}>
-              <button onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }} disabled={currentPage === 1}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: currentPage === 1 ? 'transparent' : '#161b22', color: currentPage === 1 ? '#484f58' : '#e6edf3', fontSize: '12px', fontWeight: '600', cursor: currentPage === 1 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>← Prev</button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
-                .reduce((acc, p, idx, arr) => { if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...'); acc.push(p); return acc }, [])
-                .map((p, i) => p === '...'
-                  ? <span key={`e-${i}`} style={{ color: '#484f58', fontSize: '13px', padding: '0 4px' }}>...</span>
-                  : <button key={p} onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                      style={{ width: '34px', height: '34px', borderRadius: '8px', border: '1px solid', borderColor: currentPage === p ? '#f59e0b' : 'rgba(255,255,255,0.08)', backgroundColor: currentPage === p ? 'rgba(245,158,11,0.1)' : '#161b22', color: currentPage === p ? '#f59e0b' : '#e6edf3', fontSize: '12px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>{p}</button>
-                )}
-              <button onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }} disabled={currentPage === totalPages}
-                style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.08)', backgroundColor: currentPage === totalPages ? 'transparent' : '#161b22', color: currentPage === totalPages ? '#484f58' : '#e6edf3', fontSize: '12px', fontWeight: '600', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>Next →</button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', flex: 1 }}>
+              {types.map(type => (
+                <button
+                  key={type}
+                  onClick={() => { setTypeFilter(type); setCurrentPage(1) }}
+                  style={{
+                    padding: '5px 12px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid',
+                    borderColor: typeFilter === type ? 'var(--accent-cyan-border)' : 'var(--border-default)',
+                    backgroundColor: typeFilter === type ? 'var(--accent-cyan-muted)' : 'transparent',
+                    color: typeFilter === type ? 'var(--accent-cyan)' : 'var(--text-muted)',
+                    fontSize: '12px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-sans)',
+                    textTransform: 'capitalize',
+                    transition: 'all var(--transition)',
+                  }}
+                >
+                  {type}
+                </button>
+              ))}
             </div>
-          )}
-        </>
+
+            <select
+              value={sortBy}
+              onChange={e => { setSortBy(e.target.value); setCurrentPage(1) }}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 'var(--radius-sm)',
+                border: '1px solid var(--border-strong)',
+                backgroundColor: 'var(--bg-surface)',
+                color: 'var(--text-secondary)',
+                fontSize: '12px',
+                fontFamily: 'var(--font-sans)',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              <option value="relevance">Best match</option>
+              <option value="deadline">Deadline</option>
+              <option value="amount">Amount</option>
+              <option value="newest">Newest</option>
+            </select>
+          </div>
+        </motion.div>
+
+        {paginated.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={{
+              textAlign: 'center',
+              padding: '80px 24px',
+              backgroundColor: 'var(--bg-surface)',
+              borderRadius: 'var(--radius-lg)',
+              border: '1px solid var(--border-default)',
+            }}
+          >
+            {opportunities.length === 0 ? (
+              <>
+                <p style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                  No opportunities yet
+                </p>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                  Complete your profile so we can match you to the right ones
+                </p>
+                <button
+                  onClick={() => navigate('/profile')}
+                  style={{
+                    padding: '10px 20px',
+                    borderRadius: 'var(--radius-md)',
+                    backgroundColor: 'var(--accent-violet)',
+                    color: 'white',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  Complete profile →
+                </button>
+              </>
+            ) : (
+              <>
+                <p style={{ fontSize: '16px', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '8px' }}>
+                  No results found
+                </p>
+                <p style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+                  Try a different search or clear your filters
+                </p>
+              </>
+            )}
+          </motion.div>
+        ) : (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2, delay: 0.1 }}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))',
+                gap: '16px',
+                marginBottom: '32px',
+              }}
+            >
+              <AnimatePresence mode="popLayout">
+                {paginated.map((op, i) => (
+                  <motion.div
+                    key={op.id}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.96 }}
+                    transition={{ duration: 0.2, delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
+                  >
+                    <OpportunityCard
+                      opportunity={op}
+                      isSaved={saves.includes(op.id)}
+                      isApplied={applications.includes(op.id)}
+                      onToggleSave={toggleSave}
+                      onLogView={handleLogView}
+                      onTrackApplication={handleTrackApplication}
+                      deadlineUrgency={getUrgency(getDaysUntil(op.deadline))}
+                    />
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => { setCurrentPage(p => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: currentPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  ← Prev
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(p => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
+                  .reduce((acc, p, idx, arr) => {
+                    if (idx > 0 && p - arr[idx - 1] > 1) acc.push('...')
+                    acc.push(p)
+                    return acc
+                  }, [])
+                  .map((p, i) => p === '...'
+                    ? <span key={`e-${i}`} style={{ color: 'var(--text-muted)', fontSize: '13px', padding: '0 4px' }}>...</span>
+                    : <button
+                        key={p}
+                        onClick={() => { setCurrentPage(p); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                        style={{
+                          width: '34px', height: '34px',
+                          borderRadius: 'var(--radius-sm)',
+                          border: '1px solid',
+                          borderColor: currentPage === p ? 'var(--accent-violet-border)' : 'var(--border-default)',
+                          backgroundColor: currentPage === p ? 'var(--accent-violet-muted)' : 'var(--bg-surface)',
+                          color: currentPage === p ? 'var(--accent-violet)' : 'var(--text-secondary)',
+                          fontSize: '13px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                          fontFamily: 'var(--font-sans)',
+                        }}
+                      >
+                        {p}
+                      </button>
+                  )}
+
+                <button
+                  onClick={() => { setCurrentPage(p => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 'var(--radius-sm)',
+                    border: '1px solid var(--border-default)',
+                    backgroundColor: 'var(--bg-surface)',
+                    color: currentPage === totalPages ? 'var(--text-muted)' : 'var(--text-primary)',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-sans)',
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
       )}
 
-      {pendingBadge && (
-        <BadgeUnlockNotification
-          badge={BADGE_DEFINITIONS.find(b => b.id === pendingBadge)}
-          onDismiss={() => setPendingBadge(null)}
-        />
-      )}
-
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       <Footer />
     </div>
   )

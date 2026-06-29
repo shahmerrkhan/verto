@@ -44,3 +44,5 @@ lerna-debug.log*
 # Vite/Next.js specific
 .vite/
 .next/
+.vercel
+.env*

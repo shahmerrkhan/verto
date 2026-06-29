@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
 export default function UrgentNudge() {
@@ -16,34 +15,15 @@ export default function UrgentNudge() {
     if (alreadyShown) return
 
     async function checkUrgent() {
-      const { data: saves } = await supabase
-        .from('saves')
-        .select('opportunity_id')
-        .eq('user_id', user.id)
+      const savesRes = await window.fetch(`/api/urgent?userId=${user.id}`)
+      const urgent = await savesRes.json()
+      if (!Array.isArray(urgent) || urgent.length === 0) return
 
-      if (!saves || saves.length === 0) return
-
-      const ids = saves.map(s => s.opportunity_id)
-      const cutoff = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString()
-      const now = new Date().toISOString()
-
-      const { data: urgent } = await supabase
-        .from('opportunities')
-        .select('id, title, deadline')
-        .in('id', ids)
-        .eq('is_active', true)
-        .gte('deadline', now)
-        .lte('deadline', cutoff)
-        .order('deadline', { ascending: true })
-        .limit(1)
-
-      if (urgent && urgent.length > 0) {
-        const op = urgent[0]
-        const hours = Math.ceil((new Date(op.deadline) - new Date()) / (1000 * 60 * 60))
-        setNudge({ ...op, hours })
-        setTimeout(() => setVisible(true), 2000)
-        sessionStorage.setItem('urgentNudgeShown', 'true')
-      }
+      const op = urgent[0]
+      const hours = Math.ceil((new Date(op.deadline) - new Date()) / (1000 * 60 * 60))
+      setNudge({ ...op, hours })
+      setTimeout(() => setVisible(true), 2000)
+      sessionStorage.setItem('urgentNudgeShown', 'true')
     }
 
     checkUrgent()

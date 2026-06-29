@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import { useResponsive } from '../config/responsive'
 
@@ -17,24 +16,9 @@ export default function YouMightHaveMissed() {
       // Get user interests from profile
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
 
-      const { data } = await supabase
-        .from('opportunities')
-        .select('id, title, org_name, type, deadline, amount')
-        .eq('is_active', true)
-        .gte('created_at', threeDaysAgo)
-        .order('created_at', { ascending: false })
-        .limit(12)
-        
-      // Also get what they've already seen/saved so we can deprioritize those
-      const { data: views } = await supabase
-        .from('opportunity_views')
-        .select('opportunity_id')
-        .eq('user_id', user.id)
-
-      const seenIds = new Set((views || []).map(v => v.opportunity_id))
-      const unseen = (data || []).filter(op => !seenIds.has(op.id)).slice(0, 4)
-
-      setOpps(unseen)
+      const res = await window.fetch(`/api/missed?userId=${user.id}`)
+      const unseen = await res.json()
+      setOpps(Array.isArray(unseen) ? unseen : [])
       setLoading(false)
     }
     fetchMissed()

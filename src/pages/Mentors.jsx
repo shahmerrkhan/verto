@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import { useResponsive } from '../config/responsive'
 
@@ -62,9 +61,10 @@ export default function Mentors() {
     setLoading(true)
     setError('')
 
-    const { error: dbError } = await supabase
-      .from('mentors')
-      .insert({
+    const res = await fetch('/api/mentors/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
         full_name: form.full_name.trim(),
         email: form.email.trim(),
         linkedin_url: form.linkedin_url.trim() || null,
@@ -74,10 +74,10 @@ export default function Mentors() {
         skills: form.skills,
         opportunity_types: form.opportunity_types,
         interest_tags: form.interest_tags,
-        status: 'pending',
-      })
+      }),
+    })
 
-    if (dbError) {
+    if (!res.ok) {
       setError('Something went wrong. Try again.')
       setLoading(false)
       return

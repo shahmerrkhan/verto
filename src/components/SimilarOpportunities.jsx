@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 
 export default function SimilarOpportunities({ currentId, type }) {
   const [opps, setOpps] = useState([])
@@ -9,14 +8,9 @@ export default function SimilarOpportunities({ currentId, type }) {
   useEffect(() => {
     if (!type) return
     async function fetch() {
-      const { data } = await supabase
-        .from('opportunities')
-        .select('id, title, org_name, type, deadline, amount')
-        .eq('is_active', true)
-        .eq('type', type)
-        .neq('id', currentId)
-        .limit(3)
-      setOpps(data || [])
+      const res = await window.fetch(`/api/similar?type=${type}&exclude=${currentId}`)
+      const data = await res.json()
+      setOpps(Array.isArray(data) ? data : [])
     }
     fetch()
   }, [currentId, type])

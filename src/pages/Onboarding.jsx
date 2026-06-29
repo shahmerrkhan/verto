@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import { useResponsive } from '../config/responsive'
 
 const INTERESTS = [
@@ -44,19 +43,19 @@ export default function Profile() {
 
   async function handleSave() {
     setLoading(true)
-    await supabase
-      .from('profiles')
-      .update({
+    await fetch('/api/profile/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
         full_name: form.full_name,
         grade: parseInt(form.grade),
         province: form.province,
         interests: form.interests,
         gpa_range: form.gpa_range,
         financial_need: form.financial_need,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', user.id)
-
+      }),
+    })
     setLoading(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 2500)

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import ArticleCard from '../components/ArticleCard'
 import { useNavigate } from 'react-router-dom'
@@ -23,9 +22,10 @@ export default function Articles() {
   useEffect(() => { applyFiltersAndSort() }, [searchQuery, sortBy, articles])
 
   async function fetchArticles() {
-    const { data, error } = await supabase.from('articles').select('*').eq('status', 'published').order('published_at', { ascending: false })
-    if (error) { console.error(error); setLoading(false); return }
-    setArticles(data || []); setLoading(false)
+    const res = await fetch('/api/articles')
+    const data = await res.json()
+    setArticles(Array.isArray(data) ? data : [])
+    setLoading(false)
   }
 
   function applyFiltersAndSort() {

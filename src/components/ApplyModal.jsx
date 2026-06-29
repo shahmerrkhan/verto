@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 export default function ApplyModal({ opportunity, onClose, onApplied }) {
@@ -21,20 +20,15 @@ export default function ApplyModal({ opportunity, onClose, onApplied }) {
   async function handleApply() {
     setLoading(true)
 
-    // Track application in Supabase
-    await supabase.from('applications').upsert({
-      user_id: user.id,
-      opportunity_id: opportunity.id,
-      applied_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,opportunity_id' })
-
-    await supabase.from('save_metadata').upsert({
-      user_id: user.id,
-      opportunity_id: opportunity.id,
-      is_applied: true,
-      outcome: 'pending',
-      notes: notes || null,
-    }, { onConflict: 'user_id,opportunity_id' })
+    await fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        opportunityId: opportunity.id,
+        notes: notes || null,
+      }),
+    })
 
     // Open the external site
     window.open(opportunity.url, '_blank')

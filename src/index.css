@@ -4,6 +4,16 @@
   box-sizing: border-box;
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 768px) {
+  .mobile-hamburger {
+    display: flex !important;
+  }
+}
+
 :root {
   --bg: #0d1117;
   --surface: #161b22;

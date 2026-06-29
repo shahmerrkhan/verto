@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import OutcomeModal from '../components/OutcomeModal'
 import { useAuth } from '../context/AuthContext'
-import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getOpportunities, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections, logView, awardBadges } from '../lib/dbHelpers'
-import { supabase } from '../lib/supabase'
+import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getOpportunities, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections, logView, awardBadges } from '../lib/db'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
@@ -56,8 +55,10 @@ export default function Saves() {
     if (!saves || saves.length === 0) { setSavedOpportunities([]); setLoading(false); return }
 
     const ids = saves.map(s => s.opportunity_id)
-    const { data: opportunities } = await supabase.from('opportunities').select('*').in('id', ids).eq('is_active', true)
-
+    const oppsRes = await fetch('/api/opportunities')
+    const allOpps = await oppsRes.json()
+    const opportunities = Array.isArray(allOpps) ? allOpps.filter(o => ids.includes(o.id)) : []
+    
     const oppsWithCollections = (opportunities || []).map(opp => ({
       ...opp,
       collection_ids: collectionMappings?.filter(m => m.opportunity_id === opp.id).map(m => m.collection_id) || []
@@ -105,8 +106,8 @@ async function fetchCollections() {
   }
 
   async function awardBadgesInSaves(newBadgeIds) {
-    const { data: prof } = await supabase.from('profiles').select('badges').eq('id', user.id).single()
-    const allBadges = [...new Set([...(prof?.badges || []), ...newBadgeIds])]
+    const profRes = await fetch(`/api/profile?userId=${user.id}`)
+    const prof = await profRes.json()
     await awardBadges(user.id, prof?.badges || [], newBadgeIds)
     setPendingBadge(newBadgeIds[0])
   }
@@ -134,7 +135,8 @@ async function updateNote(oppId, note) {
 
     if (status === 'accepted') {
       fireConfetti()
-      const { data: prof } = await supabase.from('profiles').select('badges').eq('id', user.id).single()
+      const profRes = await fetch(`/api/profile?userId=${user.id}`)
+      const prof = await profRes.json()
       const newlyEarned = checkNewBadges({
         saveCount: savedOpportunities.length,
         appCount: Object.values(metadata).filter(m => m.application_status).length + 1,

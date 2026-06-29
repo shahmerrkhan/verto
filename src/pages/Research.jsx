@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import ResearchPaperCard from '../components/ResearchPaperCard'
 import { useResponsive } from '../config/responsive'
@@ -19,9 +18,10 @@ export default function Research() {
   useEffect(() => { applyFilters() }, [filters, papers])
 
   async function fetchPapers() {
-    const { data, error } = await supabase.from('research_papers').select('*').order('year', { ascending: false })
-    if (error) { console.error(error); setLoading(false); return }
-    setPapers(data || []); setLoading(false)
+    const res = await fetch('/api/research')
+    const data = await res.json()
+    setPapers(Array.isArray(data) ? data : [])
+    setLoading(false)
   }
 
   function applyFilters() {

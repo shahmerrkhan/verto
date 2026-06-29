@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 
 export default function SearchPalette({ onClose }) {
   const [query, setQuery] = useState('')
@@ -39,18 +38,13 @@ export default function SearchPalette({ onClose }) {
     setLoading(true)
     const like = `%${term}%`
 
-    const [oppsRes, coursesRes, articlesRes, researchRes] = await Promise.all([
-      supabase.from('opportunities').select('id, title, org_name, type').eq('is_active', true).or(`title.ilike.${like},org_name.ilike.${like},description.ilike.${like}`).limit(4),
-      supabase.from('courses').select('id, title, provider, platform').eq('is_active', true).or(`title.ilike.${like},provider.ilike.${like},description.ilike.${like}`).limit(3),
-      supabase.from('articles').select('id, title, author_name').eq('status', 'published').or(`title.ilike.${like},excerpt.ilike.${like},author_name.ilike.${like}`).limit(3),
-      supabase.from('research_papers').select('id, title, authors, field').or(`title.ilike.${like},authors.ilike.${like},abstract.ilike.${like}`).limit(3),
-    ])
-
+    const res = await fetch(`/api/search?q=${encodeURIComponent(term)}`)
+    const data = await res.json()
     setResults({
-      opportunities: oppsRes.data || [],
-      courses: coursesRes.data || [],
-      articles: articlesRes.data || [],
-      research: researchRes.data || [],
+      opportunities: data.opportunities || [],
+      courses: data.courses || [],
+      articles: data.articles || [],
+      research: data.research || [],
     })
     setLoading(false)
   }

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { calculateMatchScore } from '../lib/opportunityMatcher'
 
 export default function MatchShareCard({ profile, onClose, onGoToDashboard }) {
@@ -7,22 +6,19 @@ export default function MatchShareCard({ profile, onClose, onGoToDashboard }) {
   const [loading, setLoading] = useState(true)
   const [copied, setCopied] = useState(false)
 
-  useEffect(() => {
-    fetchMatchCount()
-  }, [])
-
   async function fetchMatchCount() {
-    const { data, error } = await supabase
-      .from('opportunities')
-      .select('*')
-      .eq('is_active', true)
-
-    if (error || !data) { setLoading(false); return }
-
+    const res = await fetch('/api/opportunities')
+    const data = await res.json()
+    if (!Array.isArray(data)) { setLoading(false); return }
     const matched = data.filter(opp => calculateMatchScore(opp, profile) >= 30)
     setMatchCount(matched.length)
     setLoading(false)
   }
+
+  useEffect(() => {
+    fetchMatchCount()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function handleCopy() {
     const text = `Just joined Verto and matched ${matchCount} opportunities for Canadian students 🎯 Find yours at verto-indol.vercel.app`

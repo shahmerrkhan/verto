@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
 import { useResponsive } from '../config/responsive'
 
 export default function OpportunityOfTheDay() {
@@ -11,17 +10,10 @@ export default function OpportunityOfTheDay() {
 
   useEffect(() => {
     async function fetchOpp() {
-      const { data } = await supabase
-        .from('opportunities')
-        .select('id, title, org_name, type, deadline, amount, description')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(20)
-
-      if (!data || data.length === 0) { setLoading(false); return }
-
-      const dayIndex = Math.floor(Date.now() / 86400000) % data.length
-      setOpp(data[dayIndex])
+      const res = await window.fetch('/api/opportunity-of-the-day')
+      const data = await res.json()
+      if (!data || data.error) { setLoading(false); return }
+      setOpp(data)
       setLoading(false)
     }
     fetchOpp()

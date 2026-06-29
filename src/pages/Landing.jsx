@@ -85,25 +85,6 @@ export default function Landing() {
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, rgba(245,158,11,0.3), transparent)', animation: 'scanline 8s linear infinite', opacity: 0.5 }} />
       </div>
 
-      {/* Nav */}
-      <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100, borderBottom: `1px solid ${scrollY > 20 ? 'rgba(255,255,255,0.06)' : 'transparent'}`, backgroundColor: scrollY > 20 ? 'rgba(8,12,16,0.9)' : 'transparent', backdropFilter: scrollY > 20 ? 'blur(20px)' : 'none', transition: 'all 0.3s ease' }}>
-        <div style={{ maxWidth: '1140px', margin: '0 auto', padding: '0 24px', height: '64px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
-            <svg width="28" height="28" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-              <rect width="80" height="80" rx="16" fill="#064e3b"/>
-              <polygon points="40,12 64,68 52,68 40,40 28,68 16,68" fill="#34d399"/>
-              <polygon points="40,12 64,68 58,68 40,26 22,68 16,68" fill="#6ee7b7" opacity="0.4"/>
-            </svg>
-            <span style={{ fontSize: '20px', fontWeight: '800', color: '#e6edf3', letterSpacing: '-0.5px', fontFamily: "'Syne', sans-serif" }}>verto</span>
-          </div>
-            <div style={{ display: isMobile || isTablet ? 'none' : 'flex', gap: '6px', alignItems: 'center' }}>
-            <button className="nav-link" onClick={() => navigate('/for-organizers')} style={{ padding: '8px 14px', background: 'none', border: 'none', color: '#7d8590', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'color 0.15s' }}>For Organizers</button>
-            <button className="btn-ghost" onClick={() => navigate('/login')} style={{ padding: '8px 16px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '13px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' }}>Sign in</button>
-            <button className="btn-primary" onClick={() => navigate('/signup')} style={{ padding: '8px 18px', borderRadius: '8px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '13px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit' }}>Get started</button>
-          </div>
-        </div>
-      </nav>
-
       {/* Hero */}
         <section ref={heroRef} style={{ position: 'relative', zIndex: 1, maxWidth: '1140px', margin: '0 auto', padding: 'clamp(80px, 15vw, 140px) 24px clamp(60px, 10vw, 100px)', display: 'grid', gridTemplateColumns: isMobile || isTablet ? '1fr' : '1fr 1fr', gap: isMobile || isTablet ? '40px' : '80px', alignItems: 'center' }}>
 

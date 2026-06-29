@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
 const TYPES = ['scholarship', 'competition', 'internship', 'program', 'grant']
@@ -75,35 +74,40 @@ export default function Admin() {
 
   async function fetchAll() {
     setLoadingList(true)
-    const { data } = await supabase.from('opportunities').select('*').order('created_at', { ascending: false })
-    setOpportunities(data || [])
+    const res = await fetch('/api/opportunities')
+    const data = await res.json()
+    setOpportunities(Array.isArray(data) ? data : [])
     setLoadingList(false)
   }
 
   async function fetchMentors() {
     setLoadingMentors(true)
-    const { data } = await supabase.from('mentors').select('*').order('created_at', { ascending: false })
-    setMentors(data || [])
+    const res = await fetch('/api/mentors')
+    const data = await res.json()
+    setMentors(Array.isArray(data) ? data : [])
     setLoadingMentors(false)
   }
 
   async function fetchApprovedMentors() {
-    const { data } = await supabase.from('mentors').select('*').eq('status', 'approved')
-    setApprovedMentors(data || [])
+    const res = await fetch('/api/mentors?status=approved')
+    const data = await res.json()
+    setApprovedMentors(Array.isArray(data) ? data : [])
   }
 
   async function fetchApplicants() {
     setLoadingApplicants(true)
-    const { data } = await supabase
-      .from('applications')
-      .select('user_id, opportunity_id, applied_at, opportunities(title, type)')
-      .order('applied_at', { ascending: false })
-    setApplicants(data || [])
+    const res = await fetch('/api/applicants')
+    const data = await res.json()
+    setApplicants(Array.isArray(data) ? data : [])
     setLoadingApplicants(false)
   }
 
   async function updateMentorStatus(id, status) {
-    await supabase.from('mentors').update({ status }).eq('id', id)
+    await fetch('/api/mentors/update-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, status }),
+    })
     setMentors(prev => prev.map(m => m.id === id ? { ...m, status } : m))
   }
 
@@ -114,17 +118,22 @@ export default function Admin() {
     }
     setSessionLoading(true)
     setSessionMessage(null)
-    const { error } = await supabase.from('sessions').insert([{
-      ...sessionForm,
-      duration_minutes: parseInt(sessionForm.duration_minutes),
-      max_attendees: parseInt(sessionForm.max_attendees),
-    }])
+    const res = await fetch('/api/sessions/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...sessionForm,
+        duration_minutes: parseInt(sessionForm.duration_minutes),
+        max_attendees: parseInt(sessionForm.max_attendees),
+      }),
+    })
     setSessionLoading(false)
-    if (error) {
-      setSessionMessage({ type: 'error', text: error.message })
-    } else {
+    if (res.ok) {
       setSessionMessage({ type: 'success', text: 'Session created successfully!' })
       setSessionForm(EMPTY_SESSION)
+    } else {
+      const err = await res.json()
+      setSessionMessage({ type: 'error', text: err.error || 'Something went wrong.' })
     }
   }
 
@@ -184,31 +193,35 @@ export default function Admin() {
       amount: form.amount ? parseInt(form.amount) : null,
       deadline: form.deadline || null,
     }
-    let error
-    if (editingId) {
-      ;({ error } = await supabase.from('opportunities').update(payload).eq('id', editingId))
-    } else {
-      ;({ error } = await supabase.from('opportunities').insert([payload]))
-    }
+    const res = await fetch(editingId ? `/api/opportunities/${editingId}` : '/api/opportunities/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    })
     setLoading(false)
-    if (error) {
-      setMessage({ type: 'error', text: error.message })
-    } else {
+    if (res.ok) {
       setMessage({ type: 'success', text: editingId ? 'Opportunity updated!' : 'Opportunity added!' })
       setForm(EMPTY_FORM)
       setEditingId(null)
       if (tab === 'manage') fetchAll()
+    } else {
+      const err = await res.json()
+      setMessage({ type: 'error', text: err.error || 'Something went wrong.' })
     }
   }
 
   async function toggleActive(id, current) {
-    await supabase.from('opportunities').update({ is_active: !current }).eq('id', id)
+    await fetch(`/api/opportunities/${id}/toggle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_active: !current }),
+    })
     setOpportunities(opportunities.map(op => op.id === id ? { ...op, is_active: !current } : op))
   }
 
   async function deleteOpp(id) {
     if (!window.confirm('Delete this opportunity? This cannot be undone.')) return
-    await supabase.from('opportunities').delete().eq('id', id)
+    await fetch(`/api/opportunities/${id}`, { method: 'DELETE' })
     setOpportunities(opportunities.filter(op => op.id !== id))
   }
 

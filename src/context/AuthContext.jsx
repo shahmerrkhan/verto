@@ -1,64 +1,54 @@
 import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { useUser, useClerk } from '@clerk/clerk-react'
 
 const AuthContext = createContext({})
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
+  const { user: clerkUser, isLoaded } = useUser()
+  const { signOut: clerkSignOut } = useClerk()
   const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else setLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else {
-        setProfile(null)
-        setLoading(false)
-      }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [])
+    if (!isLoaded) return
+    if (!clerkUser) {
+      setProfile(null)
+      return
+    }
+    fetchProfile(clerkUser.id)
+  }, [clerkUser, isLoaded])
 
   async function fetchProfile(userId) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    setProfile(data)
-    setLoading(false)
-  }
-
-  async function signUp(email, password) {
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    return { data, error }
-  }
-
-  async function signIn(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    return { data, error }
-  }
-
-  async function signOut() {
-    await supabase.auth.signOut()
-    setUser(null)
-    setProfile(null)
+    try {
+      setProfileLoading(true)
+      const res = await fetch(`/api/profile?userId=${userId}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setProfile(data)
+    } catch (err) {
+      console.error('Failed to fetch profile:', err)
+    } finally {
+      setProfileLoading(false)
+    }
   }
 
   async function refreshProfile() {
-    if (user) await fetchProfile(user.id)
+    if (clerkUser) await fetchProfile(clerkUser.id)
+  }
+
+  async function signOut() {
+    setProfile(null)
+    await clerkSignOut()
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{
+      user: clerkUser ?? null,
+      profile,
+      loading: !isLoaded || profileLoading,
+      signOut,
+      refreshProfile,
+    }}>
       {children}
     </AuthContext.Provider>
   )

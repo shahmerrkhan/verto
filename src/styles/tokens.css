@@ -1,0 +1,45 @@
+:root {
+  --bg-base: #0c0c12;
+  --bg-surface: #13131e;
+  --bg-elevated: #1a1a28;
+  --bg-overlay: #21212f;
+
+  --accent-violet: #7c3aed;
+  --accent-violet-hover: #6d28d9;
+  --accent-violet-muted: rgba(124, 58, 237, 0.12);
+  --accent-violet-border: rgba(124, 58, 237, 0.3);
+
+  --accent-cyan: #22d3ee;
+  --accent-cyan-muted: rgba(34, 211, 238, 0.1);
+  --accent-cyan-border: rgba(34, 211, 238, 0.25);
+
+  --text-primary: #eeeef5;
+  --text-secondary: #9896b0;
+  --text-muted: #4e4c66;
+
+  --border-default: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+
+  --success: #10b981;
+  --success-muted: rgba(16, 185, 129, 0.1);
+  --warning: #f59e0b;
+  --warning-muted: rgba(245, 158, 11, 0.1);
+  --danger: #ef4444;
+  --danger-muted: rgba(239, 68, 68, 0.1);
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
+
+  --transition: 0.18s ease;
+  --transition-slow: 0.35s ease;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-display: 'Syne', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}

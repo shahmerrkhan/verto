@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { supabase } from '../lib/supabase'
 
 const OUTCOMES = [
   { value: 'won', label: '🏆 Won / Accepted', color: '#3fb950' },
@@ -29,38 +28,25 @@ export default function OutcomeModal({ opportunity, saveMetaId, userId, onClose,
     setError('')
 
     try {
-      // Update save_metadata
-      const { error: metaError } = await supabase
-        .from('save_metadata')
-        .update({
+      const res = await fetch('/api/outcome', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          saveMetaId,
           outcome,
-          outcome_note: note || null,
-          outcome_date: new Date().toISOString(),
-          is_public_win: isPublic && isWin,
-        })
-        .eq('id', saveMetaId)
+          note: note || null,
+          isPublic: isPublic && isWin,
+          userId,
+          opportunityId: opportunity.id,
+          displayName: displayName.trim(),
+          school: school.trim() || null,
+          prizeAmount: opportunity.amount || null,
+          opportunityTitle: opportunity.title,
+          orgName: opportunity.org_name || null,
+        }),
+      })
 
-      if (metaError) throw metaError
-
-      // If win and wants to be public, insert into winners
-      if (isWin && isPublic) {
-        const { error: winError } = await supabase
-          .from('winners')
-          .insert({
-            user_id: userId,
-            opportunity_id: opportunity.id,
-            display_name: displayName.trim(),
-            school: school.trim() || null,
-            outcome,
-            outcome_note: note || null,
-            prize_amount: opportunity.amount || null,
-            opportunity_title: opportunity.title,
-            org_name: opportunity.org_name || null,
-          })
-
-        if (winError && winError.code !== '23505') throw winError
-        // 23505 = duplicate, they already submitted this win, ignore
-      }
+      if (!res.ok) throw new Error('Something went wrong.')
 
       onSaved && onSaved(outcome)
       onClose()

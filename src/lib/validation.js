@@ -12,6 +12,7 @@ export function sanitizeInput(str) {
   let sanitized = str.replace(/<[^>]*>/g, '')
   
   // Remove control characters
+  // eslint-disable-next-line no-control-regex
   sanitized = sanitized.replace(/[\x00-\x1F\x7F]/g, '')
   
   // Trim whitespace
@@ -32,11 +33,7 @@ export function validateProfile(data) {
     if (sanitized.length > 100) {
       errors.push('Full name too long (max 100 chars)')
     }
-    // Check for SQL injection patterns
-    if (/('|"|;|--|\*|\/\*)/i.test(sanitized)) {
-      errors.push('Full name contains invalid characters')
     }
-  }
   
   if (data.grade && (isNaN(data.grade) || data.grade < 9 || data.grade > 12)) {
     errors.push('Grade must be 9-12')
@@ -68,10 +65,7 @@ export function validateSaveMetadata(data) {
     if (sanitized.length > 1000) {
       errors.push('Notes too long (max 1000 chars)')
     }
-    if (/('|";|--|\*|\/\*)/i.test(sanitized)) {
-      errors.push('Notes contain invalid characters')
     }
-  }
   
   if (data.application_status && !['applied', 'interview', 'rejected', 'accepted'].includes(data.application_status)) {
     errors.push('Invalid application status')
@@ -94,9 +88,5 @@ export function validateCollectionName(name) {
   if (name && name.length > 50) {
     errors.push('Collection name too long (max 50 chars)')
   }
-  if (/('|";|--|\*|\/\*)/i.test(name)) {
-    errors.push('Collection name contains invalid characters')
-  }
-  
   return { valid: errors.length === 0, errors }
 }

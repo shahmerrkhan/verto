@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 import CourseCard from './CourseCard'
 
@@ -67,13 +66,9 @@ export default function RelatedCourses({ opportunity }) {
     setLoading(true)
 
     // Pull a reasonable sample to score against — not all 594
-    const { data, error } = await supabase
-      .from('courses')
-      .select('*')
-      .eq('is_active', true)
-      .limit(120)
-
-    if (error || !data) { setLoading(false); return }
+    const res = await fetch('/api/courses')
+    const data = await res.json()
+    if (!Array.isArray(data)) { setLoading(false); return }
 
     const scored = data
       .map(c => ({ ...c, _score: scoreCourseFit(c, opportunity) }))

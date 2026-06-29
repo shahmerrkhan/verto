@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import { useNavigate } from 'react-router-dom'
 
 export default function SubmitArticle() {
@@ -26,19 +25,19 @@ export default function SubmitArticle() {
       return
     }
 
-    const { error: submitError } = await supabase
-      .from('articles')
-      .insert({
-        author_id: user.id,
-        author_name: profile?.full_name || 'Anonymous',
+    const res = await fetch('/api/articles/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        authorId: user.id,
+        authorName: profile?.full_name || 'Anonymous',
         title: formData.title,
         excerpt: formData.excerpt || formData.content.substring(0, 150),
         content: formData.content,
-        status: 'pending',
-        views: 0
-      })
+      }),
+    })
 
-    if (submitError) {
+    if (!res.ok) {
       setError('Failed to submit article')
       setLoading(false)
       return

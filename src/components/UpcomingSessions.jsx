@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 
 function timeUntil(dateStr) {
@@ -33,80 +32,34 @@ export default function UpcomingSessions({ opportunity }) {
   async function fetchSessions() {
     setLoading(true)
 
-    const { data, error } = await supabase
-      .from('sessions')
-      .select('*, mentors(full_name, role, institution, linkedin_url)')
-      .eq('is_active', true)
-      .gte('session_date', new Date().toISOString())
-      .order('session_date', { ascending: true })
+    const res = await fetch(`/api/sessions/upcoming?type=${encodeURIComponent(opportunity.type || '')}&tags=${encodeURIComponent((opportunity.interest_tags || []).join(','))}&userId=${user?.id || ''}`)
+    if (!res.ok) { setLoading(false); return }
+    const data = await res.json()
 
-    if (error || !data) { setLoading(false); return }
-
-    // Match sessions to this opportunity by type or interest tags
-    const oppTags = (opportunity.interest_tags || []).map(t => t.toLowerCase())
-    const oppType = (opportunity.type || '').toLowerCase()
-
-    const matched = data.filter(session => {
-      const sessionTags = (session.interest_tags || []).map(t => t.toLowerCase())
-      const sessionTypes = (session.opportunity_types || []).map(t => t.toLowerCase())
-      const tagMatch = sessionTags.some(t => oppTags.includes(t))
-      const typeMatch = sessionTypes.includes(oppType)
-      return tagMatch || typeMatch
-    }).slice(0, 3)
-
-    setSessions(matched)
-
-    // Check which ones user has signed up for
-    if (user && matched.length > 0) {
-      const { data: signups } = await supabase
-        .from('session_signups')
-        .select('session_id')
-        .eq('user_id', user.id)
-        .in('session_id', matched.map(s => s.id))
-
-      if (signups) {
-        const map = {}
-        signups.forEach(s => { map[s.session_id] = true })
-        setSignedUp(map)
-      }
-    }
-
+    setSessions(data.sessions)
+    setSignedUp(data.signedUp)
     setLoading(false)
   }
 
+  
   async function handleSignup(session) {
     if (!user) return
     setSigningUp(session.id)
 
-    if (signedUp[session.id]) {
-      // Cancel signup
-      await supabase
-        .from('session_signups')
-        .delete()
-        .eq('session_id', session.id)
-        .eq('user_id', user.id)
-      setSignedUp(prev => ({ ...prev, [session.id]: false }))
-    } else {
-      // Sign up
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('full_name')
-        .eq('id', user.id)
-        .single()
+    await fetch(`/api/sessions/${session.id}/signup`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: user.id,
+        email: user.email,
+        signedUp: !!signedUp[session.id],
+      }),
+    })
 
-      await supabase
-        .from('session_signups')
-        .insert({
-          session_id: session.id,
-          user_id: user.id,
-          email: user.email,
-          full_name: profile?.full_name || null,
-        })
-      setSignedUp(prev => ({ ...prev, [session.id]: true }))
-    }
-
+    setSignedUp(prev => ({ ...prev, [session.id]: !prev[session.id] }))
     setSigningUp(null)
   }
+
 
   if (loading || sessions.length === 0) return null
 
@@ -181,7 +134,7 @@ export default function UpcomingSessions({ opportunity }) {
                   onClick={() => handleSignup(session)}
                   disabled={isSigning || !user}
                   style={{
-                    padding: '8px 14px', borderRadius: '8px', border: 'none',
+                    padding: '8px 14px', borderRadius: '8px',
                     backgroundColor: isSignedUp ? 'rgba(63,185,80,0.1)' : '#f59e0b',
                     color: isSignedUp ? '#3fb950' : '#0d1117',
                     fontSize: '12px', fontWeight: '700', cursor: isSigning ? 'wait' : 'pointer',

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
 import MatchScore from './MatchScore'
 
 export default function OpportunityModal({ opportunity, isSaved, onToggleSave, onLogView, onClose }) {
@@ -59,14 +58,9 @@ export default function OpportunityModal({ opportunity, isSaved, onToggleSave, o
 
   useEffect(() => {
     async function fetchSimilar() {
-      const { data } = await supabase
-        .from('opportunities')
-        .select('*')
-        .eq('is_active', true)
-        .eq('type', type)
-        .neq('id', id)
-        .limit(3)
-      setSimilarOpps(data || [])
+      const res = await fetch(`/api/similar?type=${type}&exclude=${id}`)
+      const data = await res.json()
+      setSimilarOpps(Array.isArray(data) ? data : [])
     }
     fetchSimilar()
   }, [id, type])

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 
 export default function ArticleDetail() {
@@ -18,46 +17,16 @@ export default function ArticleDetail() {
   }, [id])
 
   async function fetchArticle() {
-    const { data, error } = await supabase
-      .from('articles')
-      .select('*')
-      .eq('id', id)
-      .eq('status', 'published')
-      .single()
-
-    if (error) {
+    const res = await fetch(`/api/articles/${id}?userId=${user?.id || ''}`)
+    if (!res.ok) {
       setLoading(false)
       return
     }
+    const data = await res.json()
 
-    setArticle(data)
-    setLikeCount(0)
-    
-    // Increment views
-    await supabase
-      .from('articles')
-      .update({ views: (data.views || 0) + 1 })
-      .eq('id', id)
-
-    // Check if user liked it
-    if (user) {
-      const { data: likeData } = await supabase
-        .from('article_likes')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('article_id', id)
-        .single()
-      
-      if (likeData) setLiked(true)
-    }
-
-    // Fetch like count
-    const { data: likes } = await supabase
-      .from('article_likes')
-      .select('*', { count: 'exact' })
-      .eq('article_id', id)
-
-    setLikeCount(likes?.length || 0)
+    setArticle(data.article)
+    setLiked(data.liked)
+    setLikeCount(data.likeCount)
     setLoading(false)
   }
 
@@ -67,21 +36,16 @@ export default function ArticleDetail() {
       return
     }
 
-    if (liked) {
-      await supabase
-        .from('article_likes')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('article_id', id)
-      setLiked(false)
-      setLikeCount(likeCount - 1)
-    } else {
-      await supabase
-        .from('article_likes')
-        .insert({ user_id: user.id, article_id: id })
-      setLiked(true)
-      setLikeCount(likeCount + 1)
-    }
+    const res = await fetch(`/api/articles/${id}/like`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ userId: user.id, liked }),
+    })
+
+    if (!res.ok) return
+
+    setLiked(!liked)
+    setLikeCount(liked ? likeCount - 1 : likeCount + 1)
   }
 
   if (loading) return (

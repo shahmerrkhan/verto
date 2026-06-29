@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { supabase } from '../lib/supabase'
 import Footer from '../components/Footer'
 import CourseCard from '../components/CourseCard'
 import LoadingSkeleton from '../components/LoadingSkeleton'
@@ -23,9 +22,10 @@ export default function Courses() {
   useEffect(() => { applyFilters() }, [filters, courses])
 
   async function fetchCourses() {
-    const { data, error } = await supabase.from('courses').select('*').eq('is_active', true).order('created_at', { ascending: false })
-    if (error) { console.error(error); setLoading(false); return }
-    setCourses(data || []); setLoading(false)
+    const res = await fetch('/api/courses')
+    const data = await res.json()
+    setCourses(Array.isArray(data) ? data : [])
+    setLoading(false)
   }
 
   function applyFilters() {

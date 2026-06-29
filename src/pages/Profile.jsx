@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { updateProfile } from '../lib/dbHelpers'
+import { updateProfile } from '../lib/db'
 import OnboardingProgress from '../components/OnboardingProgress'
 import { BadgeGrid } from '../components/Badges'
 import { useLocation } from 'react-router-dom'
 import MatchShareCard from '../components/MatchShareCard'
-import { supabase } from '../lib/supabase'
 import { useResponsive } from '../config/responsive'
+import { validateProfile } from '../lib/validation'
+import Toast from '../components/Toast'
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -68,6 +69,7 @@ export default function Profile() {
   const [saved, setSaved] = useState(false)
   const [focused, setFocused] = useState(null)
   const [counts, setCounts] = useState({ saves: 0, apps: 0 })
+  const [toast, setToast] = useState(null)
   const location = useLocation()
   const [showShareCard, setShowShareCard] = useState(false)
   const isNewUser = new URLSearchParams(location.search).get('new') === 'true'
@@ -75,11 +77,10 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return
     async function fetchCounts() {
-      const [{ count: saveCount }, { count: appCount }] = await Promise.all([
-        supabase.from('saves').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-        supabase.from('applications').select('*', { count: 'exact', head: true }).eq('user_id', user.id),
-      ])
-      setCounts({ saves: saveCount || 0, apps: appCount || 0 })
+      const res = await fetch(`/api/profile/counts?userId=${user.id}`)
+      if (!res.ok) return
+      const data = await res.json()
+      setCounts({ saves: data.saves, apps: data.apps })
     }
     fetchCounts()
   }, [user])
@@ -89,8 +90,6 @@ export default function Profile() {
   }
 
   async function handleSave() {
-  const { validateProfile } = require('../lib/validation')
-  
   const validation = validateProfile({
     full_name: form.full_name,
     grade: form.grade ? parseInt(form.grade) : null,
@@ -105,17 +104,17 @@ export default function Profile() {
   }
   
   setLoading(true)
-  const { error } = await updateProfile(user.id, {
-    full_name: form.full_name,
-    grade: parseInt(form.grade),
-    province: form.province,
-    interests: form.interests,
-    gpa_range: form.gpa_range,
-    financial_need: form.financial_need,
-    email_alerts: form.email_alerts,
-  })
-  
-  if (error) {
+  try {
+    await updateProfile(user.id, {
+      full_name: form.full_name,
+      grade: parseInt(form.grade),
+      province: form.province,
+      interests: form.interests,
+      gpa_range: form.gpa_range,
+      financial_need: form.financial_need,
+      email_alerts: form.email_alerts,
+    })
+  } catch (err) {
     setToast({ message: 'Failed to save profile', type: 'error' })
     setLoading(false)
     return
@@ -219,6 +218,7 @@ export default function Profile() {
           {loading ? 'Saving...' : saved ? '✓ Saved' : 'Save changes'}
         </button>
       </div>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   )
 }
