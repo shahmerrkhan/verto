@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
 
@@ -7,120 +8,173 @@ export default function ArticleDetail() {
   const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
+
   const [article, setArticle] = useState(null)
   const [liked, setLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetchArticle()
-  }, [id])
+  const [likeLoading, setLikeLoading] = useState(false)
 
   async function fetchArticle() {
-    const res = await fetch(`/api/articles/${id}?userId=${user?.id || ''}`)
-    if (!res.ok) {
+    try {
+      const res = await fetch(`/api/articles?action=detail&id=${id}&userId=${user?.id || ''}`)
+      if (!res.ok) { setLoading(false); return }
+      const data = await res.json()
+      setArticle(data.article)
+      setLiked(data.liked)
+      setLikeCount(data.likeCount)
+    } catch {
+      setArticle(null)
+    } finally {
       setLoading(false)
-      return
     }
-    const data = await res.json()
-
-    setArticle(data.article)
-    setLiked(data.liked)
-    setLikeCount(data.likeCount)
-    setLoading(false)
   }
 
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchArticle()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id])
+
   async function toggleLike() {
-    if (!user) {
-      navigate('/login')
-      return
+    if (!user) { navigate('/login'); return }
+    if (likeLoading) return
+    setLikeLoading(true)
+    const wasLiked = liked
+    setLiked(!wasLiked)
+    setLikeCount(wasLiked ? likeCount - 1 : likeCount + 1)
+    try {
+      const res = await fetch(`/api/articles?action=like&id=${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, liked: wasLiked }),
+      })
+      if (!res.ok) throw new Error()
+    } catch {
+      setLiked(wasLiked)
+      setLikeCount(wasLiked ? likeCount + 1 : likeCount - 1)
+    } finally {
+      setLikeLoading(false)
     }
-
-    const res = await fetch(`/api/articles/${id}/like`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId: user.id, liked }),
-    })
-
-    if (!res.ok) return
-
-    setLiked(!liked)
-    setLikeCount(liked ? likeCount - 1 : likeCount + 1)
   }
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '15px' }}>
-      Loading article...
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-base)' }}>
+      <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', fontSize: '14px' }}>Loading...</p>
     </div>
   )
 
   if (!article) return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#666', fontSize: '15px' }}>
-      Article not found
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-base)' }}>
+      <p style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-sans)', fontSize: '14px' }}>Article not found.</p>
     </div>
   )
 
   return (
-        <div style={{ maxWidth: '700px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}>
-          <div style={{ marginBottom: '24px' }}>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-base)', paddingTop: '80px' }}>
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        style={{ maxWidth: '720px', margin: '0 auto', padding: '48px 24px 80px' }}
+      >
         <button
           onClick={() => navigate('/articles')}
-          style={{ background: 'none', border: 'none', color: '#064e3b', fontSize: '14px', fontWeight: '600', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '6px', fontFamily: 'inherit' }}
-          onMouseEnter={e => e.currentTarget.style.opacity = '0.7'}
-          onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: 'var(--text-muted)',
+            fontSize: '13px',
+            fontWeight: '500',
+            cursor: 'pointer',
+            padding: '0 0 32px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            fontFamily: 'var(--font-sans)',
+            transition: 'color var(--transition)',
+          }}
+          onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
+          onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
           ← Back to articles
         </button>
-      </div>
 
-      <article style={styles.article}>
-        <h1 style={styles.title}>{article.title}</h1>
+        <article>
+          <h1 style={{
+            fontSize: '32px',
+            fontWeight: '700',
+            color: 'var(--text-primary)',
+            fontFamily: 'var(--font-display)',
+            lineHeight: 1.2,
+            letterSpacing: '-0.5px',
+            marginBottom: '16px',
+          }}>
+            {article.title}
+          </h1>
 
-        <div style={styles.meta}>
-          <span style={styles.author}>{article.author_name}</span>
-          <span style={styles.separator}>{String.fromCharCode(8226)}</span>
-          <span style={styles.date}>
-            {new Date(article.published_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })}
-          </span>
-          <span style={styles.separator}>{String.fromCharCode(8226)}</span>
-          <span style={styles.views}>{article.views} views</span>
-        </div>
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            fontSize: '13px',
+            color: 'var(--text-muted)',
+            marginBottom: '40px',
+            paddingBottom: '24px',
+            borderBottom: '1px solid var(--border-default)',
+            flexWrap: 'wrap',
+            fontFamily: 'var(--font-sans)',
+          }}>
+            <span style={{ fontWeight: '600', color: 'var(--text-secondary)' }}>{article.author_name}</span>
+            <span>·</span>
+            <span>{new Date(article.published_at).toLocaleDateString('en-CA', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+            <span>·</span>
+            <span>{article.views} views</span>
+          </div>
 
-        <div style={styles.content}>
-          {article.content.split('\n').map((para, i) => (
-            para.trim() && <p key={i} style={styles.paragraph}>{para}</p>
-          ))}
-        </div>
+          <div style={{ marginBottom: '40px' }}>
+            {article.content.split('\n').map((para, i) =>
+              para.trim() ? (
+                <p key={i} style={{
+                  fontSize: '15px',
+                  lineHeight: 1.85,
+                  color: 'var(--text-secondary)',
+                  marginBottom: '20px',
+                  fontFamily: 'var(--font-sans)',
+                }}>
+                  {para}
+                </p>
+              ) : null
+            )}
+          </div>
 
-        <div style={styles.footer}>
-          <button
-            style={{...styles.likeBtn, backgroundColor: liked ? '#f0fdf4' : '#fff', borderColor: liked ? '#10b981' : '#e0e0e0', color: liked ? '#10b981' : '#666'}}
-            onClick={toggleLike}
-            onMouseEnter={e => !liked && (e.target.style.backgroundColor = '#f3f4f6')}
-            onMouseLeave={e => !liked && (e.target.style.backgroundColor = '#fff')}
-          >
-            {liked ? '❤' : '🤍'} {likeCount} {likeCount === 1 ? 'like' : 'likes'}
-          </button>
-        </div>
-      </article>
+          <div style={{
+            paddingTop: '24px',
+            borderTop: '1px solid var(--border-default)',
+          }}>
+            <button
+              onClick={toggleLike}
+              style={{
+                padding: '10px 18px',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid',
+                borderColor: liked ? 'var(--success)' : 'var(--border-strong)',
+                backgroundColor: liked ? 'var(--success-muted)' : 'transparent',
+                color: liked ? 'var(--success)' : 'var(--text-secondary)',
+                fontSize: '13px',
+                fontWeight: '600',
+                cursor: likeLoading ? 'wait' : 'pointer',
+                fontFamily: 'var(--font-sans)',
+                transition: 'all var(--transition)',
+              }}
+            >
+              {liked ? '♥' : '♡'} {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+            </button>
+          </div>
+        </article>
+      </motion.div>
 
       <Footer />
     </div>
   )
-}
-
-const styles = {
-  header: { marginBottom: '32px' },
-  backBtn: { padding: '9px 16px', borderRadius: '10px', border: '1.5px solid #064e3b', backgroundColor: 'transparent', color: '#064e3b', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' },
-  article: { backgroundColor: '#fff', borderRadius: '16px', padding: '48px', border: '1px solid #e5e7eb', boxShadow: '0 1px 16px rgba(0,0,0,0.04)' },
-  title: { fontSize: '34px', fontWeight: '700', color: '#0a0a0a', marginBottom: '16px', lineHeight: 1.15, letterSpacing: '-1px' },
-  meta: { display: 'flex', gap: '8px', alignItems: 'center', fontSize: '13px', color: '#9ca3af', marginBottom: '36px', flexWrap: 'wrap', paddingBottom: '24px', borderBottom: '1px solid #f3f4f6' },
-  author: { fontWeight: '600', color: '#374151' },
-  separator: { color: '#d1d5db' },
-  date: {},
-  views: { color: '#6b7280' },
-  content: { marginBottom: '32px' },
-  paragraph: { fontSize: '15px', lineHeight: 1.8, color: '#374151', marginBottom: '16px' },
-  footer: { paddingTop: '24px', borderTop: '1px solid #e5e7eb' },
-  likeBtn: { padding: '10px 14px', borderRadius: '8px', border: '1.5px solid #e0e0e0', backgroundColor: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' },
 }

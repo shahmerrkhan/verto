@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../context/AuthContext'
-import { useResponsive } from '../config/responsive'
 
 const INTERESTS = [
   'Software & Tech', 'Engineering', 'Science & Research',
@@ -10,16 +10,16 @@ const INTERESTS = [
   'Social Justice & Community', 'Mathematics', 'Writing & Journalism'
 ]
 
-const PROVINCES = [
-  'AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT'
-]
-
+const PROVINCES = ['AB', 'BC', 'MB', 'NB', 'NL', 'NS', 'NT', 'NU', 'ON', 'PE', 'QC', 'SK', 'YT']
 const GPA_RANGES = ['4.0', '3.5-3.9', '3.0-3.4', '2.5-2.9', 'Below 2.5', 'N/A']
 
-export default function Profile() {
-  const { isMobile } = useResponsive()
-  const { user, profile, signOut } = useAuth()
+const STEPS = ['name', 'grade', 'province', 'gpa', 'interests', 'finish']
+
+export default function Onboarding() {
+  const { user, profile, refreshProfile } = useAuth()
   const navigate = useNavigate()
+  const [step, setStep] = useState(0)
+  const [saving, setSaving] = useState(false)
   const [form, setForm] = useState({
     full_name: profile?.full_name || '',
     grade: profile?.grade || '',
@@ -28,9 +28,9 @@ export default function Profile() {
     gpa_range: profile?.gpa_range || '',
     financial_need: profile?.financial_need || false,
   })
-  const [loading, setLoading] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [focused, setFocused] = useState(null)
+
+  function next() { setStep(s => Math.min(s + 1, STEPS.length - 1)) }
+  function back() { setStep(s => Math.max(s - 1, 0)) }
 
   function toggleInterest(interest) {
     setForm(prev => ({
@@ -41,353 +41,230 @@ export default function Profile() {
     }))
   }
 
-  async function handleSave() {
-    setLoading(true)
-    await fetch('/api/profile/update', {
+  async function finish() {
+    setSaving(true)
+      await fetch('/api/profile?action=update', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: user.id,
         full_name: form.full_name,
-        grade: parseInt(form.grade),
+        grade: parseInt(form.grade) || null,
         province: form.province,
         interests: form.interests,
         gpa_range: form.gpa_range,
         financial_need: form.financial_need,
       }),
     })
-    setLoading(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    await refreshProfile()
+    setSaving(false)
+    navigate('/dashboard')
   }
 
-  const inputStyle = (name) => ({
-    ...styles.input,
-    borderColor: focused === name ? '#064e3b' : '#e0e0e0',
-    boxShadow: focused === name ? '0 0 0 3px rgba(6,78,59,0.08)' : 'none',
+  const current = STEPS[step]
+
+  const wrap = {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'var(--bg-base)',
+    fontFamily: 'var(--font-sans)',
+    padding: '24px',
+  }
+
+  const card = {
+    width: '100%',
+    maxWidth: '480px',
+    textAlign: 'center',
+  }
+
+  const question = {
+    fontSize: '28px',
+    fontWeight: '800',
+    color: 'var(--text-primary)',
+    fontFamily: 'var(--font-display)',
+    marginBottom: '28px',
+    letterSpacing: '-0.5px',
+  }
+
+  const input = {
+    width: '100%',
+    padding: '16px 18px',
+    fontSize: '18px',
+    borderRadius: 'var(--radius-md)',
+    border: '1px solid var(--border-strong)',
+    backgroundColor: 'var(--bg-surface)',
+    color: 'var(--text-primary)',
+    textAlign: 'center',
+    fontFamily: 'inherit',
+    outline: 'none',
+    boxSizing: 'border-box',
+  }
+
+  const primaryBtn = {
+    marginTop: '24px',
+    padding: '14px 36px',
+    borderRadius: 'var(--radius-md)',
+    border: 'none',
+    backgroundColor: 'var(--accent-violet)',
+    color: '#fff',
+    fontSize: '15px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    fontFamily: 'inherit',
+  }
+
+  const chip = (active) => ({
+    padding: '10px 18px',
+    borderRadius: '999px',
+    border: '1px solid',
+    borderColor: active ? 'var(--accent-violet)' : 'var(--border-strong)',
+    backgroundColor: active ? 'var(--accent-violet)' : 'transparent',
+    color: active ? '#fff' : 'var(--text-secondary)',
+    fontSize: '13px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    margin: '4px',
+    fontFamily: 'inherit',
   })
 
+  const slideVariants = {
+    enter: { opacity: 0, y: 16 },
+    center: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -16 },
+  }
+
+  function canAdvance() {
+    if (current === 'name') return form.full_name.trim().length > 0
+    if (current === 'grade') return !!form.grade
+    if (current === 'province') return !!form.province
+    if (current === 'gpa') return !!form.gpa_range
+    return true
+  }
+
   return (
-<div style={{ ...styles.container, padding: isMobile ? '24px 16px' : '40px 24px', animation: 'fadeSlideIn 0.6s cubic-bezier(0.22, 1, 0.36, 1)' }}>
-<div style={{ ...styles.header, flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? '12px' : '0' }} className="header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <svg width="30" height="30" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
-            <rect width="80" height="80" rx="16" fill="#064e3b"/>
-            <polygon points="40,12 64,68 52,68 40,40 28,68 16,68" fill="#34d399"/>
-            <polygon points="40,12 64,68 58,68 40,26 22,68 16,68" fill="#6ee7b7" opacity="0.4"/>
-          </svg>
-          <span style={styles.logoText}>verto</span>
-        </div>
-<div style={{ display: 'flex', gap: '10px', width: isMobile ? '100%' : 'auto' }}>
-            <button
-            style={{ ...styles.backBtn, flex: isMobile ? 1 : 'none', minHeight: '44px' }}
-            onClick={() => navigate('/dashboard')}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#064e3b'; e.target.style.color = '#fff' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent'; e.target.style.color = '#064e3b' }}
-          >
-            ← Dashboard
-          </button>
-          <button
-            style={{ ...styles.signOutBtn, flex: isMobile ? 1 : 'none', minHeight: '44px' }}
-            onClick={signOut}
-            onMouseEnter={e => { e.target.style.backgroundColor = '#f3f4f6' }}
-            onMouseLeave={e => { e.target.style.backgroundColor = 'transparent' }}
-          >
-            Sign out
-          </button>
-        </div>
+    <div style={wrap}>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '48px' }}>
+        {STEPS.map((s, i) => (
+          <div key={s} style={{
+            width: '32px',
+            height: '4px',
+            borderRadius: '2px',
+            backgroundColor: i <= step ? 'var(--accent-violet)' : 'var(--border-default)',
+            transition: 'background-color 0.3s ease',
+          }} />
+        ))}
       </div>
 
-      <div style={styles.pageTitle}>
-        <h1 style={styles.title}>Your profile</h1>
-        <p style={styles.subtitle}>Update your info to get better matched opportunities</p>
-      </div>
+      <div style={card}>
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={current}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {current === 'name' && (
+              <>
+                <h1 style={question}>What's your name?</h1>
+                <input
+                  style={input}
+                  autoFocus
+                  value={form.full_name}
+                  onChange={e => setForm({ ...form, full_name: e.target.value })}
+                  onKeyDown={e => e.key === 'Enter' && canAdvance() && next()}
+                  placeholder="Your full name"
+                />
+              </>
+            )}
 
-<div style={{ ...styles.grid, gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))', gap: isMobile ? '12px' : '24px' }}>
-          <div style={{ ...styles.section, padding: isMobile ? '16px' : '28px' }}>
-          <h3 style={styles.sectionTitle}>Basic info</h3>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Full name</label>
-            <input
-              style={inputStyle('name')}
-              value={form.full_name}
-              onChange={e => setForm({ ...form, full_name: e.target.value })}
-              onFocus={() => setFocused('name')}
-              onBlur={() => setFocused(null)}
-            />
-          </div>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Grade</label>
-            <select
-              style={inputStyle('grade')}
-              value={form.grade}
-              onChange={e => setForm({ ...form, grade: e.target.value })}
-              onFocus={() => setFocused('grade')}
-              onBlur={() => setFocused(null)}
-            >
-              {[9, 10, 11, 12].map(g => (
-                <option key={g} value={g}>Grade {g}</option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>Province</label>
-            <select
-              style={inputStyle('province')}
-              value={form.province}
-              onChange={e => setForm({ ...form, province: e.target.value })}
-              onFocus={() => setFocused('province')}
-              onBlur={() => setFocused(null)}
-            >
-              {PROVINCES.map(p => (
-                <option key={p} value={p}>{p}</option>
-              ))}
-            </select>
-          </div>
-          <div style={styles.fieldGroup}>
-            <label style={styles.label}>GPA range</label>
-            <div style={styles.tagGrid}>
-              {GPA_RANGES.map(g => (
-                <button
-                  key={g}
-                  style={{
-                    ...styles.tag,
-                    ...(form.gpa_range === g ? styles.tagActive : {}),
-                  }}
-                  onClick={() => setForm({ ...form, gpa_range: g })}
-                >
-                  {g}
+            {current === 'grade' && (
+              <>
+                <h1 style={question}>What grade are you in, {form.full_name.split(' ')[0]}?</h1>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {['9', '10', '11', '12'].map(g => (
+                    <button key={g} style={chip(form.grade === g)} onClick={() => { setForm({ ...form, grade: g }); setTimeout(next, 200) }}>
+                      Grade {g}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {current === 'province' && (
+              <>
+                <h1 style={question}>Which province?</h1>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {PROVINCES.map(p => (
+                    <button key={p} style={chip(form.province === p)} onClick={() => { setForm({ ...form, province: p }); setTimeout(next, 200) }}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {current === 'gpa' && (
+              <>
+                <h1 style={question}>What's your GPA range?</h1>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {GPA_RANGES.map(g => (
+                    <button key={g} style={chip(form.gpa_range === g)} onClick={() => { setForm({ ...form, gpa_range: g }); setTimeout(next, 200) }}>
+                      {g}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {current === 'interests' && (
+              <>
+                <h1 style={question}>What are you into?</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '13px', marginBottom: '20px' }}>Pick as many as you like, this drives your matches</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  {INTERESTS.map(i => (
+                    <button key={i} style={chip(form.interests.includes(i))} onClick={() => toggleInterest(i)}>
+                      {i}
+                    </button>
+                  ))}
+                </div>
+                <button style={primaryBtn} onClick={next}>Continue</button>
+              </>
+            )}
+
+            {current === 'finish' && (
+              <>
+                <h1 style={question}>You're all set, {form.full_name.split(' ')[0]}.</h1>
+                <p style={{ color: 'var(--text-muted)', fontSize: '14px', marginBottom: '8px' }}>We'll use this to match you with opportunities that actually fit.</p>
+                <button style={primaryBtn} onClick={finish} disabled={saving}>
+                  {saving ? 'Saving...' : 'Enter Verto →'}
                 </button>
-              ))}
-            </div>
-          </div>
-          <div style={styles.checkRow}>
-            <div
-              style={{
-                ...styles.checkbox,
-                backgroundColor: form.financial_need ? '#064e3b' : '#fff',
-                borderColor: form.financial_need ? '#064e3b' : '#d1d5db',
-              }}
-              onClick={() => setForm({ ...form, financial_need: !form.financial_need })}
-            >
-              {form.financial_need && <span style={styles.checkmark}>✓</span>}
-            </div>
-            <label
-              style={styles.checkLabel}
-              onClick={() => setForm({ ...form, financial_need: !form.financial_need })}
-            >
-              I have financial need
-            </label>
-          </div>
-        </div>
+              </>
+            )}
+          </motion.div>
+        </AnimatePresence>
 
-        <div style={{ ...styles.section, padding: isMobile ? '16px' : '28px' }}>
-          <h3 style={styles.sectionTitle}>Interests</h3>
-          <p style={styles.sectionSub}>These drive your AI matches</p>
-          <div style={styles.tagGrid}>
-            {INTERESTS.map(interest => (
-              <button
-                key={interest}
-                style={{
-                  ...styles.tag,
-                  ...(form.interests.includes(interest) ? styles.tagActive : {}),
-                }}
-                onClick={() => toggleInterest(interest)}
-              >
-                {interest}
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
+        {current !== 'interests' && current !== 'finish' && (
+          <button
+            style={{ ...primaryBtn, display: canAdvance() && (current === 'name') ? 'inline-block' : 'none' }}
+            onClick={next}
+          >
+            Continue
+          </button>
+        )}
 
-      <div style={{ ...styles.saveRow, justifyContent: isMobile ? 'stretch' : 'flex-end' }}>
-        <button
-          style={{
-            ...styles.saveBtn,
-            width: isMobile ? '100%' : 'auto',
-            minHeight: '44px',
-            backgroundColor: saved ? '#f0fdf4' : '#064e3b',
-            color: saved ? '#064e3b' : '#fff',
-            border: saved ? '1.5px solid #6ee7b7' : 'none',
-          }}
-          onClick={handleSave}
-          disabled={loading}
-          onMouseEnter={e => { if (!saved) e.currentTarget.style.transform = 'translateY(-1px)' }}
-          onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
-        >
-          {loading ? 'Saving...' : saved ? '✓ Saved' : 'Save changes'}
-        </button>
+        {step > 0 && current !== 'finish' && (
+          <div style={{ marginTop: '20px' }}>
+            <button onClick={back} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: '13px', cursor: 'pointer', fontFamily: 'inherit' }}>
+              ← Back
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
-}
-
-const styles = {
-  container: {
-    maxWidth: '1100px',
-    margin: '0 auto',
-    padding: '40px 24px',
-  },
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '40px',
-  },
-  logoText: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#064e3b',
-    letterSpacing: '-0.5px',
-  },
-  backBtn: {
-    padding: '9px 16px',
-    borderRadius: '10px',
-    border: '1.5px solid #064e3b',
-    backgroundColor: 'transparent',
-    color: '#064e3b',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  signOutBtn: {
-    padding: '9px 16px',
-    borderRadius: '10px',
-    border: '1.5px solid #e0e0e0',
-    backgroundColor: 'transparent',
-    color: '#666',
-    fontSize: '14px',
-    fontWeight: '500',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  pageTitle: {
-    marginBottom: '32px',
-  },
-  title: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: '6px',
-    letterSpacing: '-0.5px',
-  },
-  subtitle: {
-    fontSize: '15px',
-    color: '#6b7280',
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(min(400px, 100%), 1fr))',
-    gap: '24px',
-    marginBottom: '32px',
-  },
-  section: {
-    backgroundColor: '#fff',
-    border: '1px solid #e5e7eb',
-    borderRadius: '16px',
-    padding: '28px',
-  },
-  sectionTitle: {
-    fontSize: '16px',
-    fontWeight: '700',
-    color: '#111',
-    marginBottom: '4px',
-    letterSpacing: '-0.2px',
-  },
-  sectionSub: {
-    fontSize: '13px',
-    color: '#9ca3af',
-    marginBottom: '16px',
-  },
-  fieldGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    marginBottom: '16px',
-  },
-  label: {
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#374151',
-  },
-  input: {
-    padding: '11px 14px',
-    borderRadius: '10px',
-    border: '1.5px solid #e0e0e0',
-    fontSize: '14px',
-    fontFamily: 'inherit',
-    transition: 'all 0.2s ease',
-    outline: 'none',
-    backgroundColor: '#fafafa',
-    boxSizing: 'border-box',
-    width: '100%',
-  },
-  tagGrid: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '8px',
-    marginTop: '4px',
-  },
-  tag: {
-    padding: '7px 13px',
-    borderRadius: '20px',
-    border: '1.5px solid #e5e7eb',
-    backgroundColor: '#fff',
-    fontSize: '13px',
-    cursor: 'pointer',
-    color: '#374151',
-    fontWeight: '500',
-    transition: 'all 0.15s ease',
-  },
-  tagActive: {
-    backgroundColor: '#064e3b',
-    borderColor: '#064e3b',
-    color: '#fff',
-  },
-  checkRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginTop: '8px',
-    cursor: 'pointer',
-  },
-  checkbox: {
-    width: '20px',
-    height: '20px',
-    borderRadius: '6px',
-    border: '1.5px solid #d1d5db',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    transition: 'all 0.2s ease',
-    flexShrink: 0,
-    cursor: 'pointer',
-  },
-  checkmark: {
-    color: '#fff',
-    fontSize: '12px',
-    fontWeight: '700',
-  },
-  checkLabel: {
-    fontSize: '14px',
-    color: '#374151',
-    fontWeight: '500',
-    cursor: 'pointer',
-  },
-  saveRow: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-  },
-  saveBtn: {
-    padding: '12px 28px',
-    borderRadius: '10px',
-    border: 'none',
-    fontSize: '14px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    letterSpacing: '-0.2px',
-  },
 }

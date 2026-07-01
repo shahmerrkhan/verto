@@ -10,7 +10,7 @@ export default function OpportunityOfTheDay() {
 
   useEffect(() => {
     async function fetchOpp() {
-      const res = await window.fetch('/api/opportunity-of-the-day')
+      const res = await window.fetch('/api/opportunities?action=of-the-day')
       const data = await res.json()
       if (!data || data.error) { setLoading(false); return }
       setOpp(data)

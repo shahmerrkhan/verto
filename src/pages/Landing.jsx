@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { useEffect, useRef, useState } from 'react'
 import { useResponsive } from '../config/responsive'
+import { useAuth } from '../context/AuthContext'
 
 export default function Landing() {
   const navigate = useNavigate()
@@ -9,7 +10,8 @@ export default function Landing() {
   const [scrollY, setScrollY] = useState(0)
   const [visibleSections, setVisibleSections] = useState(new Set())
   const { isMobile, isTablet, isDesktop } = useResponsive()
-
+  const { user } = useAuth()
+  
   useEffect(() => {
     const handleMouse = (e) => setMousePos({ x: e.clientX, y: e.clientY })
     const handleScroll = () => setScrollY(window.scrollY)
@@ -107,12 +109,14 @@ export default function Landing() {
           </p>
 
           <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', alignItems: isMobile ? 'stretch' : 'center', marginBottom: '20px', flexWrap: 'wrap' }}>
-            <button className="btn-primary" onClick={() => navigate('/signup')} style={{ padding: '14px 28px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.1px', width: isMobile ? '100%' : 'auto' }}>
-              Find my opportunities →
+            <button className="btn-primary" onClick={() => navigate(user ? '/dashboard' : '/signup')} style={{ padding: '14px 28px', borderRadius: '10px', border: 'none', backgroundColor: '#f59e0b', color: '#0d1117', fontSize: '14px', fontWeight: '700', cursor: 'pointer', fontFamily: 'inherit', letterSpacing: '0.1px', width: isMobile ? '100%' : 'auto' }}>
+              {user ? 'Go to dashboard →' : 'Find my opportunities →'}
             </button>
+            {!user && (
               <button className="btn-ghost" onClick={() => navigate('/login')} style={{ padding: '14px 22px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.1)', backgroundColor: 'transparent', color: '#b1bac4', fontSize: '14px', fontWeight: '600', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s', width: isMobile ? '100%' : 'auto' }}>
-              Sign in
-            </button>
+                Sign in
+              </button>
+            )}
           </div>
 
           <p style={{ fontSize: '12px', color: '#484f58', margin: 0 }}>Free · No credit card · 2 minutes to set up</p>

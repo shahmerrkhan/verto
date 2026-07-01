@@ -92,9 +92,9 @@ export default function Navbar() {
         </span>
       </Link>
 
-      {user && (
+      {user && !isPublic && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-          {NAV_ITEMS.map(item => (
+            {NAV_ITEMS.map(item => (
             <button
               key={item.path}
               onClick={() => navigate(item.path)}
@@ -223,7 +223,6 @@ export default function Navbar() {
                   {[
                     { label: 'Profile', path: '/profile' },
                     { label: 'Analytics', path: '/analytics' },
-                    { label: 'Settings', path: '/profile' },
                   ].map(item => (
                     <button
                       key={item.path + item.label}

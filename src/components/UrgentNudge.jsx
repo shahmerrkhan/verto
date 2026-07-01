@@ -15,7 +15,7 @@ export default function UrgentNudge() {
     if (alreadyShown) return
 
     async function checkUrgent() {
-      const savesRes = await window.fetch(`/api/urgent?userId=${user.id}`)
+      const savesRes = await window.fetch(`/api/opportunities?action=urgent&userId=${user.id}`)
       const urgent = await savesRes.json()
       if (!Array.isArray(urgent) || urgent.length === 0) return
 

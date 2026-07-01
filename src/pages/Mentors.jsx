@@ -61,7 +61,7 @@ export default function Mentors() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/mentors/apply', {
+    const res = await fetch('/api/mentors?action=apply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

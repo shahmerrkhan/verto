@@ -103,7 +103,7 @@ export default function Admin() {
   }
 
   async function updateMentorStatus(id, status) {
-    await fetch('/api/mentors/update-status', {
+    await fetch('/api/mentors?action=update-status', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ id, status }),
@@ -118,7 +118,7 @@ export default function Admin() {
     }
     setSessionLoading(true)
     setSessionMessage(null)
-    const res = await fetch('/api/sessions/create', {
+    const res = await fetch('/api/sessions?action=create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -211,10 +211,10 @@ export default function Admin() {
   }
 
   async function toggleActive(id, current) {
-    await fetch(`/api/opportunities/${id}/toggle`, {
+    await fetch(`/api/opportunities?action=toggle`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ is_active: !current }),
+      body: JSON.stringify({ id, is_active: !current }),
     })
     setOpportunities(opportunities.map(op => op.id === id ? { ...op, is_active: !current } : op))
   }

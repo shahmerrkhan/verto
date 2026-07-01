@@ -77,7 +77,7 @@ export default function Profile() {
   useEffect(() => {
     if (!user) return
     async function fetchCounts() {
-      const res = await fetch(`/api/profile/counts?userId=${user.id}`)
+      const res = await fetch(`/api/profile?action=counts&userId=${user.id}`)
       if (!res.ok) return
       const data = await res.json()
       setCounts({ saves: data.saves, apps: data.apps })

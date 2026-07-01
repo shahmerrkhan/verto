@@ -10,10 +10,12 @@ export default function Analytics() {
 
   async function fetchAnalytics() {
     try {
+      const token = await window.Clerk?.session?.getToken()
+      const authHeader = { headers: { Authorization: `Bearer ${token}` } }
       const [savesRes, appsRes, viewsRes, oppsRes] = await Promise.all([
-        fetch(`/api/saves?userId=${user.id}`),
-        fetch(`/api/applications?userId=${user.id}`),
-        fetch(`/api/views?userId=${user.id}`),
+        fetch(`/api/saves?userId=${user.id}`, authHeader),
+        fetch(`/api/applications?userId=${user.id}`, authHeader),
+        fetch(`/api/views?userId=${user.id}`, authHeader),
         fetch('/api/opportunities'),
       ])
       const saves = await savesRes.json()
@@ -45,7 +47,9 @@ export default function Analytics() {
   }
 
   useEffect(() => {
-    if (user) fetchAnalytics()
+    if (!user) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchAnalytics()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
 

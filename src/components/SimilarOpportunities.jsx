@@ -7,55 +7,66 @@ export default function SimilarOpportunities({ currentId, type }) {
 
   useEffect(() => {
     if (!type) return
-    async function fetch() {
-      const res = await window.fetch(`/api/similar?type=${type}&exclude=${currentId}`)
-      const data = await res.json()
-      setOpps(Array.isArray(data) ? data : [])
+    async function load() {
+      try {
+        const res = await fetch(`/api/opportunities?action=similar&type=${type}&exclude=${currentId}`)
+        const data = await res.json()
+        setOpps(Array.isArray(data) ? data : [])
+      } catch {
+        setOpps([])
+      }
     }
-    fetch()
-  }, [currentId, type])
+    load()
+  }, [type, currentId])
 
-  if (opps.length === 0) return null
-
-  const typeColors = {
-    scholarship: { color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', icon: '🎓' },
-    competition: { color: '#818cf8', bg: 'rgba(99,102,241,0.08)', border: 'rgba(99,102,241,0.2)', icon: '🏆' },
-    internship:  { color: '#3fb950', bg: 'rgba(63,185,80,0.08)',  border: 'rgba(63,185,80,0.2)',  icon: '💼' },
-    program:     { color: '#c084fc', bg: 'rgba(192,132,252,0.08)',border: 'rgba(192,132,252,0.2)',icon: '📋' },
-    grant:       { color: '#38bdf8', bg: 'rgba(56,189,248,0.08)', border: 'rgba(56,189,248,0.2)', icon: '💰' },
-  }
+  if (!opps.length) return null
 
   return (
-    <div style={{ marginTop: '48px' }}>
-      <h3 style={{ fontSize: '16px', fontWeight: '800', color: '#e6edf3', margin: '0 0 4px', fontFamily: "'Syne', sans-serif" }}>Similar opportunities</h3>
-      <p style={{ fontSize: '12px', color: '#484f58', margin: '0 0 16px' }}>More {type}s you might like</p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(240px, 100%), 1fr))', gap: '12px' }}>
-        {opps.map(op => {
-          const tc = typeColors[op.type] || typeColors.program
-          const daysLeft = op.deadline
-            ? Math.ceil((new Date(op.deadline) - new Date()) / (1000 * 60 * 60 * 24))
-            : null
-          return (
-            <div key={op.id} onClick={() => { navigate(`/opportunities/${op.id}`); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-              style={{ backgroundColor: '#161b22', border: '1px solid rgba(255,255,255,0.07)', borderRadius: '12px', padding: '16px', cursor: 'pointer', transition: 'all 0.2s ease' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = tc.border; e.currentTarget.style.transform = 'translateY(-2px)' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)'; e.currentTarget.style.transform = 'translateY(0)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                <span style={{ fontSize: '20px' }}>{tc.icon}</span>
-                {daysLeft !== null && (
-                  <span style={{ fontSize: '10px', fontWeight: '700', color: daysLeft <= 3 ? '#f85149' : '#484f58' }}>
-                    {daysLeft <= 0 ? 'Closes today' : `${daysLeft}d left`}
-                  </span>
-                )}
-              </div>
-              <p style={{ fontSize: '13px', fontWeight: '700', color: '#e6edf3', margin: '0 0 4px', lineHeight: 1.35, fontFamily: "'Syne', sans-serif" }}>{op.title}</p>
-              <p style={{ fontSize: '12px', color: '#7d8590', margin: '0 0 10px' }}>{op.org_name}</p>
-              {op.amount && (
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#3fb950' }}>${op.amount.toLocaleString()}</span>
-              )}
-            </div>
-          )
-        })}
+    <div style={{ marginTop: '40px' }}>
+      <h3 style={{
+        fontSize: '14px',
+        fontWeight: '600',
+        color: 'var(--text-secondary)',
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        marginBottom: '16px',
+        fontFamily: 'var(--font-sans)',
+      }}>
+        Similar opportunities
+      </h3>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+        {opps.map(op => (
+          <button
+            key={op.id}
+            onClick={() => navigate(`/opportunities/${op.id}`)}
+            style={{
+              width: '100%',
+              padding: '14px 16px',
+              borderRadius: 'var(--radius-md)',
+              border: '1px solid var(--border-default)',
+              backgroundColor: 'var(--bg-surface)',
+              textAlign: 'left',
+              cursor: 'pointer',
+              fontFamily: 'var(--font-sans)',
+              transition: 'all var(--transition)',
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.borderColor = 'var(--border-strong)'
+              e.currentTarget.style.backgroundColor = 'var(--bg-elevated)'
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.borderColor = 'var(--border-default)'
+              e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
+            }}
+          >
+            <p style={{ fontSize: '13px', fontWeight: '600', color: 'var(--text-primary)', margin: '0 0 4px' }}>
+              {op.title}
+            </p>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+              {op.org_name}
+            </p>
+          </button>
+        ))}
       </div>
     </div>
   )

@@ -25,7 +25,7 @@ export default function SubmitArticle() {
       return
     }
 
-    const res = await fetch('/api/articles/submit', {
+    const res = await fetch('/api/articles?action=submit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -49,8 +49,8 @@ export default function SubmitArticle() {
   }
 
   return (
-        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '96px 24px 80px', fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif" }}>
-          <div style={styles.pageTitle}>
+    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '96px 24px 80px', backgroundColor: 'var(--bg-base)', minHeight: '100vh' }}>
+      <div style={styles.pageTitle}>
         <h1 style={styles.title}>Share your knowledge</h1>
         <p style={styles.subtitle}>Write an article for the community. We'll review and publish it.</p>
       </div>
@@ -131,21 +131,21 @@ export default function SubmitArticle() {
 
 const styles = {
   pageTitle: { marginBottom: '32px', marginTop: '32px' },
-  title: { fontSize: '28px', fontWeight: '700', color: '#111', marginBottom: '6px', letterSpacing: '-0.5px' },
-  subtitle: { fontSize: '15px', color: '#6b7280', margin: 0 },
-  successBanner: { display: 'flex', gap: '12px', backgroundColor: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: '12px', padding: '16px', marginBottom: '24px', alignItems: 'flex-start' },
-  successIcon: { fontSize: '20px', color: '#10b981', fontWeight: '700', flexShrink: 0 },
-  successTitle: { fontSize: '14px', fontWeight: '700', color: '#166534', margin: '0 0 4px 0' },
-  successSubtext: { fontSize: '13px', color: '#166534', margin: 0 },
-  errorBanner: { backgroundColor: '#fef2f2', border: '1.5px solid #fca5a5', borderRadius: '12px', padding: '12px 16px', marginBottom: '24px' },
-  errorText: { fontSize: '13px', color: '#991b1b', margin: 0 },
-  form: { backgroundColor: '#fff', border: '1px solid #e5e7eb', borderRadius: '14px', padding: '28px' },
+  title: { fontSize: '28px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '6px', letterSpacing: '-0.5px', fontFamily: 'var(--font-display)' },
+  subtitle: { fontSize: '15px', color: 'var(--text-muted)', margin: 0, fontFamily: 'var(--font-sans)' },
+  successBanner: { display: 'flex', gap: '12px', backgroundColor: 'var(--success-muted)', border: '1px solid var(--success)', borderRadius: 'var(--radius-md)', padding: '16px', marginBottom: '24px', alignItems: 'flex-start' },
+  successIcon: { fontSize: '16px', color: 'var(--success)', fontWeight: '700', flexShrink: 0 },
+  successTitle: { fontSize: '14px', fontWeight: '700', color: 'var(--success)', margin: '0 0 4px 0', fontFamily: 'var(--font-sans)' },
+  successSubtext: { fontSize: '13px', color: 'var(--success)', margin: 0, fontFamily: 'var(--font-sans)' },
+  errorBanner: { backgroundColor: 'var(--danger-muted)', border: '1px solid var(--danger)', borderRadius: 'var(--radius-md)', padding: '12px 16px', marginBottom: '24px' },
+  errorText: { fontSize: '13px', color: 'var(--danger)', margin: 0, fontFamily: 'var(--font-sans)' },
+  form: { backgroundColor: 'var(--bg-surface)', border: '1px solid var(--border-default)', borderRadius: 'var(--radius-lg)', padding: '28px' },
   formGroup: { marginBottom: '20px' },
-  label: { display: 'block', fontSize: '14px', fontWeight: '600', color: '#374151', marginBottom: '8px' },
-  input: { width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1.5px solid #e0e0e0', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box' },
-  textarea: { width: '100%', padding: '12px 14px', borderRadius: '8px', border: '1.5px solid #e0e0e0', fontSize: '14px', fontFamily: 'inherit', boxSizing: 'border-box', resize: 'vertical' },
-  charCount: { fontSize: '12px', color: '#9ca3af', margin: '6px 0 0 0' },
+  label: { display: 'block', fontSize: '13px', fontWeight: '600', color: 'var(--text-secondary)', marginBottom: '8px', fontFamily: 'var(--font-sans)' },
+  input: { width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', boxSizing: 'border-box' },
+  textarea: { width: '100%', padding: '12px 14px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', backgroundColor: 'var(--bg-elevated)', color: 'var(--text-primary)', fontSize: '14px', fontFamily: 'var(--font-sans)', boxSizing: 'border-box', resize: 'vertical' },
+  charCount: { fontSize: '12px', color: 'var(--text-muted)', margin: '6px 0 0 0', fontFamily: 'var(--font-sans)' },
   buttonGroup: { display: 'flex', gap: '12px', marginTop: '24px' },
-  submitBtn: { padding: '12px 24px', borderRadius: '10px', backgroundColor: '#064e3b', color: '#fff', border: 'none', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' },
-  cancelBtn: { padding: '12px 24px', borderRadius: '10px', border: '1.5px solid #e0e0e0', backgroundColor: 'transparent', color: '#666', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'all 0.2s ease', fontFamily: 'inherit' },
+  submitBtn: { padding: '12px 24px', borderRadius: 'var(--radius-md)', backgroundColor: 'var(--accent-violet)', color: '#fff', border: 'none', fontSize: '14px', fontWeight: '600', cursor: 'pointer', transition: 'all var(--transition)', fontFamily: 'var(--font-sans)' },
+  cancelBtn: { padding: '12px 24px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-strong)', backgroundColor: 'transparent', color: 'var(--text-muted)', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'all var(--transition)', fontFamily: 'var(--font-sans)' },
 }

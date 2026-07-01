@@ -1,3 +1,11 @@
+async function authHeaders() {
+  const token = await window.Clerk?.session?.getToken()
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }
+}
+
 export async function getOpportunities() {
   const res = await fetch('/api/opportunities')
   if (!res.ok) throw new Error('Failed to fetch opportunities')
@@ -5,7 +13,7 @@ export async function getOpportunities() {
 }
 
 export async function getSaves(userId) {
-  const res = await fetch(`/api/saves?userId=${userId}`)
+  const res = await fetch(`/api/saves?userId=${userId}`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch saves')
   return res.json()
 }
@@ -13,7 +21,7 @@ export async function getSaves(userId) {
 export async function saveOpportunity(userId, opportunityId) {
   const res = await fetch(`/api/saves?userId=${userId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ opportunityId }),
   })
   if (!res.ok) throw new Error('Failed to save opportunity')
@@ -23,7 +31,7 @@ export async function saveOpportunity(userId, opportunityId) {
 export async function unsaveOpportunity(userId, opportunityId) {
   const res = await fetch(`/api/saves?userId=${userId}`, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ opportunityId }),
   })
   if (!res.ok) throw new Error('Failed to unsave opportunity')
@@ -31,7 +39,7 @@ export async function unsaveOpportunity(userId, opportunityId) {
 }
 
 export async function getApplications(userId) {
-  const res = await fetch(`/api/applications?userId=${userId}`)
+  const res = await fetch(`/api/applications?userId=${userId}`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch applications')
   return res.json()
 }
@@ -39,7 +47,7 @@ export async function getApplications(userId) {
 export async function trackApplication(userId, opportunityId) {
   const res = await fetch(`/api/applications?userId=${userId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ opportunityId }),
   })
   if (!res.ok) throw new Error('Failed to track application')
@@ -49,7 +57,7 @@ export async function trackApplication(userId, opportunityId) {
 export async function updateProfile(userId, updates) {
   const res = await fetch('/api/profile-update', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ userId, ...updates }),
   })
   if (!res.ok) throw new Error('Failed to update profile')
@@ -59,7 +67,7 @@ export async function updateProfile(userId, updates) {
 export async function logView(userId, opportunityId) {
   const res = await fetch('/api/views', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ userId, opportunityId }),
   })
   if (!res.ok) throw new Error('Failed to log view')
@@ -67,15 +75,15 @@ export async function logView(userId, opportunityId) {
 }
 
 export async function getSaveMetadata(userId) {
-  const res = await fetch(`/api/save-metadata?userId=${userId}`)
+  const res = await fetch(`/api/saves?userId=${userId}&action=metadata`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch save metadata')
   return res.json()
 }
 
 export async function upsertSaveMetadata(userId, opportunityId, updates) {
-  const res = await fetch(`/api/save-metadata?userId=${userId}`, {
+  const res = await fetch(`/api/saves?userId=${userId}&action=metadata`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ opportunityId, updates }),
   })
   if (!res.ok) throw new Error('Failed to update save metadata')
@@ -83,7 +91,7 @@ export async function upsertSaveMetadata(userId, opportunityId, updates) {
 }
 
 export async function getCollections(userId) {
-  const res = await fetch(`/api/collections?userId=${userId}`)
+  const res = await fetch(`/api/collections?userId=${userId}`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch collections')
   return res.json()
 }
@@ -91,7 +99,7 @@ export async function getCollections(userId) {
 export async function createCollection(userId, name) {
   const res = await fetch(`/api/collections?userId=${userId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ name }),
   })
   if (!res.ok) return { data: null, error: true }
@@ -101,7 +109,7 @@ export async function createCollection(userId, name) {
 export async function deleteCollection(userId, collectionId) {
   const res = await fetch(`/api/collections?userId=${userId}`, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ collectionId }),
   })
   if (!res.ok) throw new Error('Failed to delete collection')
@@ -111,7 +119,7 @@ export async function deleteCollection(userId, collectionId) {
 export async function addToCollection(userId, opportunityId, collectionId) {
   const res = await fetch(`/api/opportunity-collections?userId=${userId}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ opportunityId, collectionId }),
   })
   if (!res.ok) return { error: true }
@@ -121,7 +129,7 @@ export async function addToCollection(userId, opportunityId, collectionId) {
 export async function removeFromAllCollections(userId, opportunityId) {
   const res = await fetch(`/api/opportunity-collections?userId=${userId}`, {
     method: 'DELETE',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ opportunityId }),
   })
   if (!res.ok) throw new Error('Failed to remove from collections')
@@ -129,7 +137,7 @@ export async function removeFromAllCollections(userId, opportunityId) {
 }
 
 export async function getOpportunityCollections(userId) {
-  const res = await fetch(`/api/opportunity-collections?userId=${userId}`)
+  const res = await fetch(`/api/opportunity-collections?userId=${userId}`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch opportunity collections')
   return res.json()
 }
@@ -138,7 +146,7 @@ export async function awardBadges(userId, currentBadges, newBadgeIds) {
   const updated = [...new Set([...currentBadges, ...newBadgeIds])]
   const res = await fetch('/api/badges', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: await authHeaders(),
     body: JSON.stringify({ userId, badges: updated }),
   })
   if (!res.ok) throw new Error('Failed to award badges')

@@ -32,7 +32,7 @@ export default function UpcomingSessions({ opportunity }) {
   async function fetchSessions() {
     setLoading(true)
 
-    const res = await fetch(`/api/sessions/upcoming?type=${encodeURIComponent(opportunity.type || '')}&tags=${encodeURIComponent((opportunity.interest_tags || []).join(','))}&userId=${user?.id || ''}`)
+    const res = await fetch(`/api/sessions?action=upcoming&type=${encodeURIComponent(opportunity.type || '')}&tags=${encodeURIComponent((opportunity.interest_tags || []).join(','))}&userId=${user?.id || ''}`)
     if (!res.ok) { setLoading(false); return }
     const data = await res.json()
 
@@ -46,7 +46,7 @@ export default function UpcomingSessions({ opportunity }) {
     if (!user) return
     setSigningUp(session.id)
 
-    await fetch(`/api/sessions/${session.id}/signup`, {
+    await fetch(`/api/sessions?action=signup&id=${session.id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

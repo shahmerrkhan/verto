@@ -63,7 +63,7 @@ export default function OpportunityDetail() {
   const fetchOpportunity = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/opportunities?id=${id}`)
+      const res = await fetch(`/api/opportunities?action=detail&id=${id}`)
       if (!res.ok) throw new Error('Not found')
       const data = await res.json()
       // The API returns an array, we want just the first (and only) item

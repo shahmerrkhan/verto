@@ -16,7 +16,7 @@ export default function YouMightHaveMissed() {
       // Get user interests from profile
       const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString()
 
-      const res = await window.fetch(`/api/missed?userId=${user.id}`)
+      const res = await window.fetch(`/api/opportunities?action=missed&userId=${user.id}`)
       const unseen = await res.json()
       setOpps(Array.isArray(unseen) ? unseen : [])
       setLoading(false)
