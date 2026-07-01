@@ -1,9 +1,9 @@
-import { handleError } from './_error.js'
+import { handleError, withLogging } from './_error.js'
 import sql from './db.js'
 import { validate, schemas } from './_validate.js'
 import { applyCors } from './_cors.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const body = validate(schemas.organizerListing, req.body, res)
@@ -20,3 +20,5 @@ export default async function handler(req, res) {
     return handleError(res, err, 'organizer listing error:')
   }
 }
+
+export default withLogging(handler)

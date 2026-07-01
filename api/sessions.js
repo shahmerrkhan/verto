@@ -1,8 +1,8 @@
-import { handleError } from './_error.js'
+import { handleError, withLogging } from './_error.js'
 import sql from './db.js'
 import { applyCors } from './_cors.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (applyCors(req, res)) return
   const { action, id, userId, type, tags } = req.query
 
@@ -86,3 +86,5 @@ export default async function handler(req, res) {
 
   return res.status(400).json({ error: 'Invalid action' })
 }
+
+export default withLogging(handler)

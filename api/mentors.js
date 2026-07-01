@@ -1,11 +1,11 @@
-import { handleError } from './_error.js'
+import { handleError, withLogging } from './_error.js'
 import sql from './db.js'
 import { requireAuth } from './_auth.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { validate, schemas } from './_validate.js'
 import { applyCors } from './_cors.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (applyCors(req, res)) return
   const { action, status } = req.query
 
@@ -57,3 +57,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Database error' })
   }
 }
+
+export default withLogging(handler)

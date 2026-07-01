@@ -1,10 +1,10 @@
-import { handleError } from './_error.js'
+import { handleError, withLogging } from './_error.js'
 import sql from './db.js'
 import { requireAuth } from './_auth.js'
 import { validate, schemas, sanitizeText } from './_validate.js'
 import { applyCors } from './_cors.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).end()
 
@@ -40,3 +40,5 @@ export default async function handler(req, res) {
     return handleError(res, err, 'outcome save error:')
   }
 }
+
+export default withLogging(handler)

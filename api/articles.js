@@ -1,10 +1,10 @@
-import { handleError } from './_error.js'
+import { handleError, withLogging } from './_error.js'
 import sql from './db.js'
 import { requireAuth } from './_auth.js'
 import { validate, schemas, sanitizeText, isValidUUID } from './_validate.js'
 import { applyCors } from './_cors.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (applyCors(req, res)) return
   const { action, id, userId } = req.query
 
@@ -87,3 +87,5 @@ export default async function handler(req, res) {
     return handleError(res, err, 'articles fetch error:')
   }
 }
+
+export default withLogging(handler)

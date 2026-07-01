@@ -1,8 +1,8 @@
-import { handleError } from './_error.js'
+import { handleError, withLogging } from './_error.js'
 import sql from './db.js'
 import { applyCors } from './_cors.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
   if (applyCors(req, res)) return
   try {
     if (req.query.ids) {
@@ -34,3 +34,5 @@ export default async function handler(req, res) {
     return handleError(res, err, 'opportunities fetch error:')
   }
 }
+
+export default withLogging(handler)
