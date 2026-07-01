@@ -12,16 +12,14 @@ export default function Analytics() {
     try {
       const token = await window.Clerk?.session?.getToken()
       const authHeader = { headers: { Authorization: `Bearer ${token}` } }
-      const [savesRes, appsRes, viewsRes, oppsRes] = await Promise.all([
+      const [savesRes, appsRes, viewsRes] = await Promise.all([
         fetch(`/api/saves?userId=${user.id}`, authHeader),
         fetch(`/api/applications?userId=${user.id}`, authHeader),
         fetch(`/api/views?userId=${user.id}`, authHeader),
-        fetch('/api/opportunities'),
       ])
-      const saves = await savesRes.json()
-      const apps = await appsRes.json()
-      const views = await viewsRes.json()
-      const opps = await oppsRes.json()
+      const saves = (await savesRes.json()).data
+      const apps = (await appsRes.json()).data
+      const views = (await viewsRes.json()).data
 
       setStats({
         totalViews: Array.isArray(views) ? views.length : 0,
@@ -29,9 +27,18 @@ export default function Analytics() {
         totalApps: Array.isArray(apps) ? apps.length : 0,
       })
 
-      const oppMap = {}
-      if (Array.isArray(opps)) opps.forEach(o => { oppMap[o.id] = o.title })
+      const neededIds = [
+        ...(Array.isArray(views) ? views.slice(-3).map(v => v.opportunity_id) : []),
+        ...(Array.isArray(saves) ? saves.slice(-3) : []),
+        ...(Array.isArray(apps) ? apps.slice(-3) : []),
+      ].filter(Boolean)
 
+      const oppMap = {}
+      if (neededIds.length > 0) {
+        const oppsRes = await fetch(`/api/opportunities?ids=${neededIds.join(',')}`)
+        const opps = (await oppsRes.json()).data
+        if (Array.isArray(opps)) opps.forEach(o => { oppMap[o.id] = o.title })
+      }
       const activity = [
         ...(Array.isArray(views) ? views.slice(-3).map(v => ({ type: 'view', id: v.opportunity_id, title: oppMap[v.opportunity_id] || 'An opportunity', date: v.created_at || new Date().toISOString() })) : []),
         ...(Array.isArray(saves) ? saves.slice(-3).map(s => ({ type: 'save', id: s, title: oppMap[s] || 'An opportunity', date: new Date().toISOString() })) : []),

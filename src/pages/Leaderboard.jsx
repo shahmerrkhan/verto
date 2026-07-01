@@ -47,7 +47,8 @@ export default function Leaderboard() {
   async function fetchWinners() {
     try {
       const res = await fetch('/api/winners')
-      const data = await res.json()
+      const json = await res.json()
+      const data = json.data
       if (Array.isArray(data)) {
         setWinners(data)
         const uniqueSchools = new Set(data.filter(w => w.school).map(w => w.school)).size

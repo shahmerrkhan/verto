@@ -1,17 +1,17 @@
 import { handleError } from './_error.js'
 import sql from './db.js'
-import { getAuth } from '@clerk/nextjs/server'
+import { requireAuth } from './_auth.js'
 import { validate, schemas } from './_validate.js'
+import { applyCors } from './_cors.js'
 
 export default async function handler(req, res) {
-  const { userId: verifiedUserId } = getAuth(req)
-  if (!verifiedUserId) {
-    return res.status(401).json({ error: 'Unauthorized' })
-  }
+  if (applyCors(req, res)) return
+  const verifiedUserId = await requireAuth(req, res)
+  if (!verifiedUserId) return
 
   if (req.method === 'GET') {
     try {
-      const data = await sql`SELECT * FROM collections WHERE user_id = ${verifiedUserId} ORDER BY created_at ASC`
+      const data = await sql`SELECT id, name, created_at FROM collections WHERE user_id = ${verifiedUserId} ORDER BY created_at ASC`
       return res.status(200).json({ data })
     } catch (err) {
       return handleError(res, err, 'collections get error:')
@@ -36,11 +36,11 @@ export default async function handler(req, res) {
     const { collectionId } = req.body
     try {
       await sql`DELETE FROM collections WHERE id = ${collectionId} AND user_id = ${verifiedUserId}`
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ data: { deleted: true } })
     } catch (err) {
       return handleError(res, err, 'collections delete error:')
     }
   }
 
-  return res.status(405).end()
+  return res.status(405).json({ error: 'Method not allowed' })
 }

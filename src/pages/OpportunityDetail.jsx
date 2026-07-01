@@ -79,8 +79,8 @@ export default function OpportunityDetail() {
           fetch(`/api/saves?userId=${user.id}`),
           fetch(`/api/applications?userId=${user.id}`),
         ])
-        const saves = await savesRes.json()
-        const apps = await appsRes.json()
+        const saves = (await savesRes.json()).data
+        const apps = (await appsRes.json()).data
         setIsSaved(Array.isArray(saves) && saves.includes(Number(id)))
         setIsApplied(Array.isArray(apps) && apps.includes(Number(id)))
       }

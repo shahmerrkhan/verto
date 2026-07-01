@@ -59,7 +59,10 @@ export default function Dashboard() {
       getOpportunities(),
       getSaves(user.id),
       getApplications(user.id),
-    ]).then(([opps, savedIds, appliedIds]) => {
+    ]).then(([oppsRes, savesRes, appsRes]) => {
+      const opps = oppsRes.data || []
+      const savedIds = savesRes.data || []
+      const appliedIds = appsRes.data || []
       const scored = opps.map(op => ({
         ...op,
         matchScore: profile ? calculateMatchScore(op, profile) : 0,

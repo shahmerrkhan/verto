@@ -75,25 +75,25 @@ export default function Admin() {
   async function fetchAll() {
     setLoadingList(true)
     const res = await fetch('/api/opportunities')
-    const data = await res.json()
-    setOpportunities(Array.isArray(data) ? data : [])
+    const json = await res.json()
+    setOpportunities(Array.isArray(json.data) ? json.data : [])
     setLoadingList(false)
   }
 
   async function fetchMentors() {
     setLoadingMentors(true)
     const res = await fetch('/api/mentors')
-    const data = await res.json()
-    setMentors(Array.isArray(data) ? data : [])
+    const json = await res.json()
+    setMentors(Array.isArray(json.data) ? json.data : [])
     setLoadingMentors(false)
   }
 
   async function fetchApprovedMentors() {
     const res = await fetch('/api/mentors?status=approved')
-    const data = await res.json()
-    setApprovedMentors(Array.isArray(data) ? data : [])
+    const json = await res.json()
+    setApprovedMentors(Array.isArray(json.data) ? json.data : [])
   }
-
+  
   async function fetchApplicants() {
     setLoadingApplicants(true)
     const res = await fetch('/api/applicants')

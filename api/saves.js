@@ -1,8 +1,10 @@
 import { handleError } from './_error.js'
 import sql from './db.js'
 import { requireAuth } from './_auth.js'
+import { applyCors } from './_cors.js'
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return
   const verifiedUserId = await requireAuth(req, res)
   if (!verifiedUserId) return
   const { action } = req.query
@@ -46,7 +48,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const rows = await sql`SELECT opportunity_id FROM saves WHERE user_id = ${verifiedUserId}`
-      return res.status(200).json(rows.map(r => r.opportunity_id))
+      return res.status(200).json({ data: rows.map(r => r.opportunity_id) })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -56,19 +58,21 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { opportunityId } = req.body
     try {
-      await sql`INSERT INTO saves (user_id, opportunity_id) VALUES (${verifiedUserId}, ${opportunityId}) ON CONFLICT DO NOTHING`
-      return res.status(200).json({ success: true })
+      const [row] = await sql`
+        INSERT INTO saves (user_id, opportunity_id) VALUES (${verifiedUserId}, ${opportunityId})
+        ON CONFLICT DO NOTHING RETURNING *
+      `
+      return res.status(200).json({ data: row || null })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
   }
-
   // DELETE /api/saves?userId=X  body: { opportunityId }
   if (req.method === 'DELETE') {
     const { opportunityId } = req.body
     try {
       await sql`DELETE FROM saves WHERE user_id = ${verifiedUserId} AND opportunity_id = ${opportunityId}`
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ data: { deleted: true } })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }

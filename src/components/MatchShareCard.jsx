@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { calculateMatchScore } from '../lib/opportunityMatcher'
 
 export default function MatchShareCard({ profile, onClose, onGoToDashboard }) {
   const [matchCount, setMatchCount] = useState(null)
@@ -7,11 +6,13 @@ export default function MatchShareCard({ profile, onClose, onGoToDashboard }) {
   const [copied, setCopied] = useState(false)
 
   async function fetchMatchCount() {
-    const res = await fetch('/api/opportunities')
+    const res = await fetch('/api/match-count', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(profile),
+    })
     const data = await res.json()
-    if (!Array.isArray(data)) { setLoading(false); return }
-    const matched = data.filter(opp => calculateMatchScore(opp, profile) >= 30)
-    setMatchCount(matched.length)
+    setMatchCount(data.count ?? 0)
     setLoading(false)
   }
 

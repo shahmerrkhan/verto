@@ -23,11 +23,11 @@ export default function Articles() {
 
   async function fetchArticles() {
     const res = await fetch('/api/articles')
-    const data = await res.json()
-    setArticles(Array.isArray(data) ? data : [])
+    const json = await res.json()
+    setArticles(Array.isArray(json.data) ? json.data : [])
     setLoading(false)
   }
-
+  
   function applyFiltersAndSort() {
     setCurrentPage(1)
     let result = [...articles]

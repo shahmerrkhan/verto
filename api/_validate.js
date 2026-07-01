@@ -1,4 +1,3 @@
-import { handleError } from './_error.js'
 import { z } from 'zod'
 
 export function validate(schema, data, res) {
@@ -8,6 +7,11 @@ export function validate(schema, data, res) {
     return null
   }
   return result.data
+}
+
+export function sanitizeText(value, maxLength = 500) {
+  if (typeof value !== 'string') return value
+  return value.replace(/<[^>]*>/g, '').trim().slice(0, maxLength)
 }
 
 export const schemas = {

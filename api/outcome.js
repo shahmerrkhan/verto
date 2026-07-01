@@ -1,9 +1,11 @@
 import { handleError } from './_error.js'
 import sql from './db.js'
 import { requireAuth } from './_auth.js'
-import { validate, schemas } from './_validate.js'
+import { validate, schemas, sanitizeText } from './_validate.js'
+import { applyCors } from './_cors.js'
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return
   if (req.method !== 'POST') return res.status(405).end()
 
   const verifiedUserId = await requireAuth(req, res)
@@ -11,8 +13,9 @@ export default async function handler(req, res) {
 
   const body = validate(schemas.outcome, req.body, res)
   if (!body) return
-  const { saveMetaId, outcome, note, isPublic, opportunityId, displayName, school, prizeAmount, opportunityTitle, orgName } = body
-
+  const { saveMetaId, outcome, note, isPublic, opportunityId, school, prizeAmount, opportunityTitle, orgName } = body
+  const displayName = sanitizeText(body.displayName, 100)
+  
   try {
     await sql`
       UPDATE save_metadata

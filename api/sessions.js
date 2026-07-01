@@ -1,7 +1,9 @@
 import { handleError } from './_error.js'
 import sql from './db.js'
+import { applyCors } from './_cors.js'
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return
   const { action, id, userId, type, tags } = req.query
 
   // POST /api/sessions?action=create

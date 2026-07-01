@@ -1,8 +1,11 @@
 import { handleError } from './_error.js'
 import sql from './db.js'
 import { requireAuth } from './_auth.js'
+import { applyCors } from './_cors.js'
+import { withLogging } from './_error.js'
 
-export default async function handler(req, res) {
+async function handler(req, res) {
+  if (applyCors(req, res)) return
   const verifiedUserId = await requireAuth(req, res)
   if (!verifiedUserId) return
   const { action } = req.query
@@ -20,7 +23,7 @@ export default async function handler(req, res) {
         LEFT JOIN opportunities o ON o.id = a.opportunity_id
         ORDER BY a.applied_at DESC
       `
-      return res.status(200).json(rows)
+      return res.status(200).json({ data: rows })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -30,18 +33,21 @@ export default async function handler(req, res) {
   if (action === 'apply' && req.method === 'POST') {
     const { opportunityId, notes } = req.body
     try {
-      await sql`
-        INSERT INTO applications (user_id, opportunity_id, applied_at)
-        VALUES (${verifiedUserId}, ${opportunityId}, NOW())
-        ON CONFLICT (user_id, opportunity_id) DO NOTHING
-      `
-      await sql`
-        INSERT INTO save_metadata (user_id, opportunity_id, is_applied, outcome, notes)
-        VALUES (${verifiedUserId}, ${opportunityId}, true, 'pending', ${notes || null})
-        ON CONFLICT (user_id, opportunity_id) DO UPDATE SET
-          is_applied = true, outcome = 'pending', notes = ${notes || null}
-      `
-      return res.status(200).json({ success: true })
+      const [applicationRow] = await sql.transaction([
+        sql`
+          INSERT INTO applications (user_id, opportunity_id, applied_at)
+          VALUES (${verifiedUserId}, ${opportunityId}, NOW())
+          ON CONFLICT (user_id, opportunity_id) DO NOTHING
+          RETURNING *
+        `,
+        sql`
+          INSERT INTO save_metadata (user_id, opportunity_id, is_applied, outcome, notes)
+          VALUES (${verifiedUserId}, ${opportunityId}, true, 'pending', ${notes || null})
+          ON CONFLICT (user_id, opportunity_id) DO UPDATE SET
+            is_applied = true, outcome = 'pending', notes = ${notes || null}
+        `,
+      ])
+      return res.status(200).json({ data: applicationRow[0] || null })
     } catch (err) {
       return handleError(res, err, 'apply error:')
     }
@@ -51,7 +57,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const rows = await sql`SELECT opportunity_id FROM applications WHERE user_id = ${verifiedUserId}`
-      return res.status(200).json(rows.map(r => r.opportunity_id))
+      return res.status(200).json({ data: rows.map(r => r.opportunity_id) })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -61,12 +67,12 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { opportunityId } = req.body
     try {
-      await sql`
+      const [row] = await sql`
         INSERT INTO applications (user_id, opportunity_id)
         VALUES (${verifiedUserId}, ${opportunityId})
-        ON CONFLICT DO NOTHING
+        ON CONFLICT DO NOTHING RETURNING *
       `
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ data: row || null })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -74,3 +80,5 @@ export default async function handler(req, res) {
 
   return res.status(405).json({ error: 'Method not allowed' })
 }
+
+export default withLogging(handler)

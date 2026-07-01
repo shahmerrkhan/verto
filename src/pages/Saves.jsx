@@ -54,10 +54,10 @@ export default function Saves() {
 
     if (!saves || saves.length === 0) { setSavedOpportunities([]); setLoading(false); return }
 
-    const ids = saves.map(s => s.opportunity_id)
+   const ids = saves.map(s => s.opportunity_id)
     const oppsRes = await fetch('/api/opportunities')
-    const allOpps = await oppsRes.json()
-    const opportunities = Array.isArray(allOpps) ? allOpps.filter(o => ids.includes(o.id)) : []
+    const oppsJson = await oppsRes.json()
+    const opportunities = Array.isArray(oppsJson.data) ? oppsJson.data.filter(o => ids.includes(o.id)) : []
     
     const oppsWithCollections = (opportunities || []).map(opp => ({
       ...opp,
@@ -106,8 +106,11 @@ async function fetchCollections() {
   }
 
   async function awardBadgesInSaves(newBadgeIds) {
-    const profRes = await fetch(`/api/profile?userId=${user.id}`)
-    const prof = await profRes.json()
+    const token = await window.Clerk?.session?.getToken()
+    const profRes = await fetch(`/api/profile?userId=${user.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    const { data: prof } = await profRes.json()
     await awardBadges(user.id, prof?.badges || [], newBadgeIds)
     setPendingBadge(newBadgeIds[0])
   }

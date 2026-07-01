@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
       const rows = await sql`SELECT opportunity_id, created_at FROM opportunity_views WHERE user_id = ${verifiedUserId}`
-      return res.status(200).json(rows)
+      return res.status(200).json({ data: rows })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -22,11 +22,12 @@ export default async function handler(req, res) {
   if (!opportunityId) return res.status(400).json({ error: 'Missing fields' })
   
   try {
-    await sql`
+    const [row] = await sql`
       INSERT INTO opportunity_views (user_id, opportunity_id)
       VALUES (${verifiedUserId}, ${opportunityId})
+      RETURNING *
     `
-    return res.status(200).json({ success: true })
+    return res.status(200).json({ data: row })
   } catch {
     return res.status(500).json({ error: 'Database error' })
   }

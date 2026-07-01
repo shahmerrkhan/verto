@@ -3,8 +3,10 @@ import sql from './db.js'
 import { requireAuth } from './_auth.js'
 import { applyRateLimit } from './_ratelimit.js'
 import { validate, schemas } from './_validate.js'
+import { applyCors } from './_cors.js'
 
 export default async function handler(req, res) {
+  if (applyCors(req, res)) return
   const { action, status } = req.query
 
   // POST /api/mentors?action=apply
@@ -17,11 +19,12 @@ export default async function handler(req, res) {
 
     const { full_name, email, linkedin_url, bio, role, institution, skills, opportunity_types, interest_tags } = body
     try {
-      await sql`
+      const [row] = await sql`
         INSERT INTO mentors (full_name, email, linkedin_url, bio, role, institution, skills, opportunity_types, interest_tags, status)
         VALUES (${full_name}, ${email}, ${linkedin_url}, ${bio}, ${role}, ${institution}, ${skills}, ${opportunity_types}, ${interest_tags}, 'pending')
+        RETURNING *
       `
-      return res.status(200).json({ success: true })
+      return res.status(200).json({ data: row })
     } catch (err) {
       return handleError(res, err, 'mentor apply error:')
     }
@@ -37,8 +40,8 @@ export default async function handler(req, res) {
 
     const { id, status: newStatus } = req.body
     try {
-      await sql`UPDATE mentors SET status = ${newStatus} WHERE id = ${id}`
-      return res.status(200).json({ success: true })
+      const [row] = await sql`UPDATE mentors SET status = ${newStatus} WHERE id = ${id} RETURNING *`
+      return res.status(200).json({ data: row })
     } catch {
       return res.status(500).json({ error: 'Database error' })
     }
@@ -47,10 +50,10 @@ export default async function handler(req, res) {
   // GET /api/mentors?status=X
   try {
     const rows = status
-      ? await sql`SELECT * FROM mentors WHERE status = ${status} ORDER BY created_at DESC`
-      : await sql`SELECT * FROM mentors ORDER BY created_at DESC`
-    return res.status(200).json(rows)
-  } catch (err) {
+      ? await sql`SELECT id, full_name, email, linkedin_url, bio, role, institution, skills, status FROM mentors WHERE status = ${status} ORDER BY created_at DESC`
+      : await sql`SELECT id, full_name, email, linkedin_url, bio, role, institution, skills, status FROM mentors ORDER BY created_at DESC`
+    return res.status(200).json({ data: rows })
+  } catch {
     return res.status(500).json({ error: 'Database error' })
   }
 }
