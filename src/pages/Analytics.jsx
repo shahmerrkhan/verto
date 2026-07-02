@@ -14,8 +14,8 @@ export default function Analytics() {
       const authHeader = { headers: { Authorization: `Bearer ${token}` } }
       const [savesRes, appsRes, viewsRes] = await Promise.all([
         fetch(`/api/saves?userId=${user.id}`, authHeader),
-        fetch(`/api/applications?userId=${user.id}`, authHeader),
-        fetch(`/api/views?userId=${user.id}`, authHeader),
+        fetch(`/api/profile?action=applications&userId=${user.id}`, authHeader),
+        fetch(`/api/saves?userId=${user.id}&action=views`, authHeader),
       ])
       const saves = (await savesRes.json()).data
       const apps = (await appsRes.json()).data

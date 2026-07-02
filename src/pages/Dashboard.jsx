@@ -144,7 +144,7 @@ export default function Dashboard() {
 
   async function handleLogView(opportunityId) {
     if (!user) return
-    try { await logView(user.id, opportunityId) } catch {}
+    try { await logView(user.id, opportunityId) } catch { /* view logging is best-effort */ }
   }
 
   const types = ['all', ...new Set(opportunities.map(op => op.type).filter(Boolean))]

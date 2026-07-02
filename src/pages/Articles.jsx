@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
 import ArticleCard from '../components/ArticleCard'
 import { useNavigate } from 'react-router-dom'
@@ -9,7 +8,6 @@ const ITEMS_PER_PAGE = 10
 
 export default function Articles() {
   const { isMobile } = useResponsive()
-  const { user } = useAuth()
   const navigate = useNavigate()
   const [articles, setArticles] = useState([])
   const [filteredArticles, setFilteredArticles] = useState([])
@@ -18,16 +16,13 @@ export default function Articles() {
   const [sortBy, setSortBy] = useState('newest')
   const [currentPage, setCurrentPage] = useState(1)
 
-  useEffect(() => { fetchArticles() }, [])
-  useEffect(() => { applyFiltersAndSort() }, [searchQuery, sortBy, articles])
-
   async function fetchArticles() {
-    const res = await fetch('/api/articles')
+    const res = await fetch('/api/articles?limit=500')
     const json = await res.json()
     setArticles(Array.isArray(json.data) ? json.data : [])
     setLoading(false)
   }
-  
+
   function applyFiltersAndSort() {
     setCurrentPage(1)
     let result = [...articles]
@@ -39,6 +34,16 @@ export default function Articles() {
     else if (sortBy === 'popular') result.sort((a, b) => b.views - a.views)
     setFilteredArticles(result)
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchArticles()
+  }, [])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyFiltersAndSort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, sortBy, articles])
 
   if (loading) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#0d1117', color: '#7d8590', fontSize: '14px', fontFamily: 'DM Sans, sans-serif' }}>

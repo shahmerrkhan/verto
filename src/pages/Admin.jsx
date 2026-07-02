@@ -10,12 +10,7 @@ const INTERESTS = [
   'Arts & Design', 'Law & Politics', 'Medicine & Health', 'Environment & Sustainability',
   'Education', 'Social Justice & Community', 'Mathematics', 'Writing & Journalism'
 ]
-const SKILLS = [
-  'Essay Writing', 'Interview Prep', 'Research Methods', 'Coding & Algorithms',
-  'Math Olympiad Prep', 'Science Fair Projects', 'Business Planning', 'Public Speaking',
-  'Scholarship Applications', 'University Admissions', 'Debate', 'Film & Media',
-  'Environmental Science', 'Biotech & Lab Research', 'Financial Literacy', 'Leadership'
-]
+
 
 const EMPTY_FORM = {
   title: '', org_name: '', description: '', type: 'scholarship',
@@ -38,7 +33,7 @@ const EMPTY_SESSION = {
 }
 
 export default function Admin() {
-  const { user, signOut } = useAuth()
+  const { user } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState('add')
   const [form, setForm] = useState(EMPTY_FORM)
@@ -93,12 +88,12 @@ export default function Admin() {
     const json = await res.json()
     setApprovedMentors(Array.isArray(json.data) ? json.data : [])
   }
-  
+
   async function fetchApplicants() {
     setLoadingApplicants(true)
-    const res = await fetch('/api/applicants')
-    const data = await res.json()
-    setApplicants(Array.isArray(data) ? data : [])
+    const res = await fetch('/api/profile?action=applications-all')
+    const json = await res.json()
+    setApplicants(Array.isArray(json.data) ? json.data : [])
     setLoadingApplicants(false)
   }
 
@@ -118,7 +113,7 @@ export default function Admin() {
     }
     setSessionLoading(true)
     setSessionMessage(null)
-    const res = await fetch('/api/sessions?action=create', {
+    const res = await fetch('/api/mentors?action=session-create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -598,8 +593,8 @@ export default function Admin() {
                 {applicants.map((a, i) => (
                   <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 120px 140px', padding: '12px 20px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
                     <span style={{ fontSize: '12px', color: '#374151', fontFamily: 'monospace', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.user_id}</span>
-                    <span style={{ fontSize: '13px', color: '#111', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.opportunities?.title || '—'}</span>
-                    <span style={{ ...A.typeBadge, backgroundColor: typeColor(a.opportunities?.type), width: 'fit-content' }}>{a.opportunities?.type || '—'}</span>
+                    <span style={{ fontSize: '13px', color: '#111', fontWeight: '500', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{a.title || '—'}</span>
+                    <span style={{ ...A.typeBadge, backgroundColor: typeColor(a.type), width: 'fit-content' }}>{a.type || '—'}</span>
                     <span style={{ fontSize: '12px', color: '#6b7280' }}>{new Date(a.applied_at).toLocaleDateString()}</span>
                   </div>
                 ))}

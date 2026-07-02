@@ -1,5 +1,5 @@
 import { handleError, withLogging } from './_error.js'
-import sql from './db.js'
+import sql from './_db.js'
 import { applyCors } from './_cors.js'
 
 async function handler(req, res) {
@@ -10,16 +10,11 @@ async function handler(req, res) {
   const like = `%${q}%`
 
   try {
-    const [opportunities, courses, articles, research] = await Promise.all([
+    const [opportunities, articles, research] = await Promise.all([
       sql`
         SELECT id, title, org_name, type FROM opportunities
         WHERE is_active = true AND (title ILIKE ${like} OR org_name ILIKE ${like} OR description ILIKE ${like})
         LIMIT 4
-      `,
-      sql`
-        SELECT id, title, provider, platform FROM courses
-        WHERE is_active = true AND (title ILIKE ${like} OR provider ILIKE ${like} OR description ILIKE ${like})
-        LIMIT 3
       `,
       sql`
         SELECT id, title, author_name FROM articles
@@ -32,7 +27,7 @@ async function handler(req, res) {
         LIMIT 3
       `,
     ])
-    return res.status(200).json({ opportunities, courses, articles, research })
+    return res.status(200).json({ opportunities, courses: [], articles, research })
   } catch (err) {
     return handleError(res, err, 'search error:')
   }

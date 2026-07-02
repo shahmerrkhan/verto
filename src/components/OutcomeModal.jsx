@@ -28,7 +28,7 @@ export default function OutcomeModal({ opportunity, saveMetaId, userId, onClose,
     setError('')
 
     try {
-      const res = await fetch('/api/outcome', {
+      const res = await fetch('/api/profile?action=outcome', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

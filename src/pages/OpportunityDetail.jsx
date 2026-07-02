@@ -65,9 +65,7 @@ export default function OpportunityDetail() {
     try {
       const res = await fetch(`/api/opportunities?action=detail&id=${id}`)
       if (!res.ok) throw new Error('Not found')
-      const data = await res.json()
-      // The API returns an array, we want just the first (and only) item
-      const opp = Array.isArray(data) ? data.find(o => String(o.id) === String(id)) : data
+      const { data: opp } = await res.json()
       setOpportunity(opp || null)
 
       if (user && opp) {
@@ -77,7 +75,7 @@ export default function OpportunityDetail() {
         // Check saved and applied status in parallel (both at the same time)
         const [savesRes, appsRes] = await Promise.all([
           fetch(`/api/saves?userId=${user.id}`),
-          fetch(`/api/applications?userId=${user.id}`),
+          fetch(`/api/profile?action=applications&userId=${user.id}`),
         ])
         const saves = (await savesRes.json()).data
         const apps = (await appsRes.json()).data
@@ -94,6 +92,7 @@ export default function OpportunityDetail() {
 
   // Run fetchOpportunity whenever the ID in the URL changes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchOpportunity()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, user])

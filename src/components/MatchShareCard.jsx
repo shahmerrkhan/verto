@@ -6,7 +6,7 @@ export default function MatchShareCard({ profile, onClose, onGoToDashboard }) {
   const [copied, setCopied] = useState(false)
 
   async function fetchMatchCount() {
-    const res = await fetch('/api/match-count', {
+    const res = await fetch('/api/opportunities?action=match-count', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(profile),
@@ -17,6 +17,7 @@ export default function MatchShareCard({ profile, onClose, onGoToDashboard }) {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchMatchCount()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

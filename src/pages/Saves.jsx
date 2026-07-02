@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import OutcomeModal from '../components/OutcomeModal'
 import { useAuth } from '../context/AuthContext'
-import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getOpportunities, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections, logView, awardBadges } from '../lib/db'
+import { getSaves, getSaveMetadata, unsaveOpportunity, upsertSaveMetadata, getCollections, createCollection as dbCreateCollection, deleteCollection as dbDeleteCollection, addToCollection, removeFromAllCollections, getOpportunityCollections, logView, awardBadges } from '../lib/db'
 import OpportunityCard from '../components/OpportunityCard'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
@@ -36,8 +36,9 @@ export default function Saves() {
   const [toast, setToast] = useState(null)
   const [outcomeModal, setOutcomeModal] = useState(null) // { opportunity, saveMetaId }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { if (user) { fetchSavedOpportunities(); fetchCollections() } }, [user])
-
+  
   useEffect(() => {
     function handleKey(e) {
       if (e.key === 'Escape') { setExpandedNotes(null); setShowMoveModal(false); setOpportunityToMove(null) }
@@ -202,14 +203,6 @@ async function updateNote(oppId, note) {
       frame++; if (frame < 180) requestAnimationFrame(draw); else canvas.remove()
     }
     draw()
-  }
-
-  function getDeadlineStatus(deadline) {
-    const days = Math.floor((new Date(deadline) - new Date()) / (1000 * 60 * 60 * 24))
-    if (days < 0) return { color: '#484f58', label: 'Closed' }
-    if (days <= 7) return { color: '#f85149', label: `${days}d left` }
-    if (days <= 30) return { color: '#f59e0b', label: `${days}d left` }
-    return { color: '#3fb950', label: `${days}d left` }
   }
 
   const getUniqueTypes = () => Array.from(new Set(savedOpportunities.map(op => op.type))).sort()
@@ -394,7 +387,6 @@ async function updateNote(oppId, note) {
           ) : (
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(min(320px, 100%), 1fr))', gap: isMobile ? '12px' : '16px' }}>
             {filteredAndSorted.map(op => {
-                const status = getDeadlineStatus(op.deadline)
                 const meta = metadata[op.id] || {}
                 const isArchived = meta.is_archived
                 const hasNote = meta.notes && meta.notes.trim().length > 0

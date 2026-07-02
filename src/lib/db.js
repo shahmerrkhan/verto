@@ -39,13 +39,13 @@ export async function unsaveOpportunity(userId, opportunityId) {
 }
 
 export async function getApplications(userId) {
-  const res = await fetch(`/api/applications?userId=${userId}`, { headers: await authHeaders() })
+  const res = await fetch(`/api/profile?action=applications&userId=${userId}`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch applications')
   return res.json()
 }
 
 export async function trackApplication(userId, opportunityId) {
-  const res = await fetch(`/api/applications?userId=${userId}`, {
+    const res = await fetch(`/api/profile?action=applications&userId=${userId}`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ opportunityId }),
@@ -65,10 +65,10 @@ export async function updateProfile(userId, updates) {
 }
 
 export async function logView(userId, opportunityId) {
-  const res = await fetch('/api/views', {
+  const res = await fetch(`/api/saves?userId=${userId}&action=views`, {
     method: 'POST',
     headers: await authHeaders(),
-    body: JSON.stringify({ userId, opportunityId }),
+    body: JSON.stringify({ opportunityId }),
   })
   if (!res.ok) throw new Error('Failed to log view')
   return res.json()
@@ -91,13 +91,13 @@ export async function upsertSaveMetadata(userId, opportunityId, updates) {
 }
 
 export async function getCollections(userId) {
-  const res = await fetch(`/api/collections?userId=${userId}`, { headers: await authHeaders() })
+  const res = await fetch(`/api/saves?userId=${userId}&action=collections`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch collections')
   return res.json()
 }
 
 export async function createCollection(userId, name) {
-  const res = await fetch(`/api/collections?userId=${userId}`, {
+  const res = await fetch(`/api/saves?userId=${userId}&action=collections`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ name }),
@@ -107,7 +107,7 @@ export async function createCollection(userId, name) {
 }
 
 export async function deleteCollection(userId, collectionId) {
-  const res = await fetch(`/api/collections?userId=${userId}`, {
+  const res = await fetch(`/api/saves?userId=${userId}&action=collections`, {
     method: 'DELETE',
     headers: await authHeaders(),
     body: JSON.stringify({ collectionId }),
@@ -117,7 +117,7 @@ export async function deleteCollection(userId, collectionId) {
 }
 
 export async function addToCollection(userId, opportunityId, collectionId) {
-  const res = await fetch(`/api/opportunity-collections?userId=${userId}`, {
+  const res = await fetch(`/api/saves?userId=${userId}&action=opportunity-collections`, {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ opportunityId, collectionId }),
@@ -127,7 +127,7 @@ export async function addToCollection(userId, opportunityId, collectionId) {
 }
 
 export async function removeFromAllCollections(userId, opportunityId) {
-  const res = await fetch(`/api/opportunity-collections?userId=${userId}`, {
+  const res = await fetch(`/api/saves?userId=${userId}&action=opportunity-collections`, {
     method: 'DELETE',
     headers: await authHeaders(),
     body: JSON.stringify({ opportunityId }),
@@ -137,14 +137,14 @@ export async function removeFromAllCollections(userId, opportunityId) {
 }
 
 export async function getOpportunityCollections(userId) {
-  const res = await fetch(`/api/opportunity-collections?userId=${userId}`, { headers: await authHeaders() })
+  const res = await fetch(`/api/saves?userId=${userId}&action=opportunity-collections`, { headers: await authHeaders() })
   if (!res.ok) throw new Error('Failed to fetch opportunity collections')
   return res.json()
 }
 
 export async function awardBadges(userId, currentBadges, newBadgeIds) {
   const updated = [...new Set([...currentBadges, ...newBadgeIds])]
-  const res = await fetch('/api/badges', {
+  const res = await fetch('/api/profile?action=badges', {
     method: 'POST',
     headers: await authHeaders(),
     body: JSON.stringify({ userId, badges: updated }),

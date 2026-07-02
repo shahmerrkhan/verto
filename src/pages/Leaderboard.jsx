@@ -1,19 +1,7 @@
 import { useEffect, useState } from 'react'
-import { useResponsive, COMPONENT, COLORS } from '../config/responsive'
+import { useResponsive, COMPONENT } from '../config/responsive'
 import { useNavigate } from 'react-router-dom'
 import Footer from '../components/Footer'
-
-const TYPE_COLORS = {
-  scholarship: { color: '#818cf8', bg: 'rgba(129,140,248,0.1)', border: 'rgba(129,140,248,0.2)' },
-  competition: { color: '#f59e0b', bg: 'rgba(245,158,11,0.1)', border: 'rgba(245,158,11,0.2)' },
-  internship:  { color: '#3fb950', bg: 'rgba(63,185,80,0.1)',  border: 'rgba(63,185,80,0.2)'  },
-  program:     { color: '#c084fc', bg: 'rgba(192,132,252,0.1)', border: 'rgba(192,132,252,0.2)' },
-  grant:       { color: '#58a6ff', bg: 'rgba(88,166,255,0.1)',  border: 'rgba(88,166,255,0.2)'  },
-}
-
-function getTypeStyle(type) {
-  return TYPE_COLORS[type?.toLowerCase()] || { color: '#8b949e', bg: 'rgba(139,148,158,0.1)', border: 'rgba(139,148,158,0.2)' }
-}
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -42,11 +30,9 @@ export default function Leaderboard() {
   const navigate = useNavigate()
   const { isMobile, isTablet } = useResponsive()
 
-  useEffect(() => { fetchWinners() }, [])
-
   async function fetchWinners() {
     try {
-      const res = await fetch('/api/winners')
+      const res = await fetch('/api/content?action=winners')
       const json = await res.json()
       const data = json.data
       if (Array.isArray(data)) {
@@ -61,6 +47,11 @@ export default function Leaderboard() {
       setLoading(false)
     }
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchWinners()
+  }, [])
   
   const filtered = winners
     .filter(w => {

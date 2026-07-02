@@ -90,7 +90,7 @@ export default function ForOrganizers() {
     setLoading(true)
     setError('')
 
-    const res = await fetch('/api/organizer-listing', {
+    const res = await fetch('/api/content?action=organizer-listing', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

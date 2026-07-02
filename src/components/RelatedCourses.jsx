@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CourseCard from './CourseCard'
 
@@ -58,15 +58,11 @@ export default function RelatedCourses({ opportunity }) {
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
 
-  useEffect(() => {
-    if (opportunity) fetchAndMatch()
-  }, [opportunity?.id])
-
-  async function fetchAndMatch() {
+  const fetchAndMatch = useCallback(async () => {
     setLoading(true)
 
     // Pull a reasonable sample to score against — not all 594
-    const res = await fetch('/api/courses')
+    const res = await fetch('/api/content?action=courses')
     const data = await res.json()
     if (!Array.isArray(data)) { setLoading(false); return }
 
@@ -78,7 +74,12 @@ export default function RelatedCourses({ opportunity }) {
 
     setCourses(scored)
     setLoading(false)
-  }
+  }, [opportunity])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (opportunity) fetchAndMatch()
+  }, [opportunity, fetchAndMatch])
 
   if (loading) return (
     <div style={{ display: 'flex', gap: '12px' }}>

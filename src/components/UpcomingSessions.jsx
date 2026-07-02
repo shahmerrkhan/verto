@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 
 function timeUntil(dateStr) {
@@ -25,28 +25,29 @@ export default function UpcomingSessions({ opportunity }) {
   const [loading, setLoading] = useState(true)
   const [signingUp, setSigningUp] = useState(null)
 
-  useEffect(() => {
-    if (opportunity) fetchSessions()
-  }, [opportunity?.id])
-
-  async function fetchSessions() {
+  const fetchSessions = useCallback(async () => {
     setLoading(true)
 
-    const res = await fetch(`/api/sessions?action=upcoming&type=${encodeURIComponent(opportunity.type || '')}&tags=${encodeURIComponent((opportunity.interest_tags || []).join(','))}&userId=${user?.id || ''}`)
+    const res = await fetch(`/api/mentors?action=session-upcoming&type=${encodeURIComponent(opportunity.type || '')}&tags=${encodeURIComponent((opportunity.interest_tags || []).join(','))}&userId=${user?.id || ''}`)
     if (!res.ok) { setLoading(false); return }
     const data = await res.json()
 
     setSessions(data.sessions)
     setSignedUp(data.signedUp)
     setLoading(false)
-  }
+  }, [opportunity, user])
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (opportunity) fetchSessions()
+  }, [opportunity, fetchSessions])
 
   
   async function handleSignup(session) {
     if (!user) return
     setSigningUp(session.id)
 
-    await fetch(`/api/sessions?action=signup&id=${session.id}`, {
+    await fetch(`/api/mentors?action=session-signup&id=${session.id}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

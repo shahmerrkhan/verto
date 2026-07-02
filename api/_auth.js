@@ -1,4 +1,5 @@
 import { verifyToken } from '@clerk/backend'
+import sql from './_db.js'
 
 export async function requireAuth(req, res) {
   const authHeader = req.headers.authorization
@@ -15,4 +16,14 @@ export async function requireAuth(req, res) {
     res.status(401).json({ error: 'Invalid session' })
     return null
   }
+}
+
+// Call after requireAuth. Returns true if admin, otherwise sends 403 and returns false.
+export async function requireAdmin(userId, res) {
+  const [requester] = await sql`SELECT is_admin FROM profiles WHERE id = ${userId}`
+  if (!requester?.is_admin) {
+    res.status(403).json({ error: 'Admin access required' })
+    return false
+  }
+  return true
 }

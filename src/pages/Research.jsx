@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../context/AuthContext'
 import Footer from '../components/Footer'
 import ResearchPaperCard from '../components/ResearchPaperCard'
 import { useResponsive } from '../config/responsive'
@@ -14,11 +13,8 @@ export default function Research() {
   const [filters, setFilters] = useState({ searchQuery: '', field: 'all', yearRange: 'all' })
   const [currentPage, setCurrentPage] = useState(1)
 
-  useEffect(() => { fetchPapers() }, [])
-  useEffect(() => { applyFilters() }, [filters, papers])
-
   async function fetchPapers() {
-    const res = await fetch('/api/research')
+    const res = await fetch('/api/content?action=research')
     const data = await res.json()
     setPapers(Array.isArray(data) ? data : [])
     setLoading(false)
@@ -39,6 +35,16 @@ export default function Research() {
     }
     setFilteredPapers(result)
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPapers()
+  }, [])
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    applyFilters()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, papers])
 
   const getUniqueFields = () => [...new Set(papers.map(p => p.field?.toLowerCase()))].filter(Boolean).sort()
 

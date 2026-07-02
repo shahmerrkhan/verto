@@ -1,4 +1,4 @@
-import sql from './db.js'
+import sql from './_db.js'
 import { applyCors } from './_cors.js'
 import { withLogging } from './_error.js'
 
